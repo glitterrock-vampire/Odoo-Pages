@@ -1,22 +1,39 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: CDT Jamaica Management API with Odoo integration
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Dashboard statistics
+  - name: students
+    description: Student management
+  - name: classes
+    description: Class management
+  - name: contacts
+    description: Contacts synced from Odoo
+  - name: donations
+    description: Donation tracking via Odoo
+  - name: finances
+    description: Financial data from Odoo
+  - name: performances
+    description: Performance event management
+  - name: tasks
+    description: Tasks synced from Odoo
+  - name: reports
+    description: Reporting and analytics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +41,646 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Dashboard ──────────────────────────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get high-level dashboard statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  # ── Students ───────────────────────────────────────────────────────────────
+  /students:
+    get:
+      operationId: listStudents
+      tags: [students]
+      summary: List all students
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: classId
+          schema:
+            type: ["integer", "null"]
+        - in: query
+          name: status
+          schema:
+            type: ["string", "null"]
+            enum: [active, inactive, null]
+      responses:
+        "200":
+          description: List of students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Student"
+    post:
+      operationId: createStudent
+      tags: [students]
+      summary: Create a new student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentInput"
+      responses:
+        "201":
+          description: Created student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+
+  /students/{id}:
+    get:
+      operationId: getStudent
+      tags: [students]
+      summary: Get a student by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateStudent
+      tags: [students]
+      summary: Update a student
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentUpdate"
+      responses:
+        "200":
+          description: Updated student
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+    delete:
+      operationId: deleteStudent
+      tags: [students]
+      summary: Delete a student
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Classes ────────────────────────────────────────────────────────────────
+  /classes:
+    get:
+      operationId: listClasses
+      tags: [classes]
+      summary: List all classes
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of classes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DanceClass"
+    post:
+      operationId: createClass
+      tags: [classes]
+      summary: Create a new class
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassInput"
+      responses:
+        "201":
+          description: Created class
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DanceClass"
+
+  /classes/{id}:
+    get:
+      operationId: getClass
+      tags: [classes]
+      summary: Get a class by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Class
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DanceClass"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateClass
+      tags: [classes]
+      summary: Update a class
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassUpdate"
+      responses:
+        "200":
+          description: Updated class
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DanceClass"
+    delete:
+      operationId: deleteClass
+      tags: [classes]
+      summary: Delete a class
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Contacts (Odoo) ────────────────────────────────────────────────────────
+  /contacts:
+    get:
+      operationId: listContacts
+      tags: [contacts]
+      summary: List contacts from Odoo
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: type
+          schema:
+            type: ["string", "null"]
+            enum: [individual, company, null]
+      responses:
+        "200":
+          description: List of contacts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contact"
+    post:
+      operationId: createContact
+      tags: [contacts]
+      summary: Create a contact in Odoo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactInput"
+      responses:
+        "201":
+          description: Created contact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+
+  /contacts/{id}:
+    get:
+      operationId: getContact
+      tags: [contacts]
+      summary: Get a contact by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateContact
+      tags: [contacts]
+      summary: Update a contact in Odoo
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactUpdate"
+      responses:
+        "200":
+          description: Updated contact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+
+  # ── Donations (Odoo) ───────────────────────────────────────────────────────
+  /donations:
+    get:
+      operationId: listDonations
+      tags: [donations]
+      summary: List donations from Odoo
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: ["string", "null"]
+            enum: [draft, confirmed, paid, cancelled, null]
+      responses:
+        "200":
+          description: List of donations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Donation"
+    post:
+      operationId: createDonation
+      tags: [donations]
+      summary: Create a donation in Odoo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationInput"
+      responses:
+        "201":
+          description: Created donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+
+  /donations/{id}:
+    get:
+      operationId: getDonation
+      tags: [donations]
+      summary: Get a donation by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Finances (Odoo) ────────────────────────────────────────────────────────
+  /finances/invoices:
+    get:
+      operationId: listInvoices
+      tags: [finances]
+      summary: List invoices from Odoo
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: state
+          schema:
+            type: ["string", "null"]
+            enum: [draft, posted, cancelled, null]
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+
+  /finances/summary:
+    get:
+      operationId: getFinancialSummary
+      tags: [finances]
+      summary: Get financial summary stats from Odoo
+      responses:
+        "200":
+          description: Financial summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialSummary"
+
+  # ── Performances ───────────────────────────────────────────────────────────
+  /performances:
+    get:
+      operationId: listPerformances
+      tags: [performances]
+      summary: List performances
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: upcoming
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of performances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Performance"
+    post:
+      operationId: createPerformance
+      tags: [performances]
+      summary: Create a performance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PerformanceInput"
+      responses:
+        "201":
+          description: Created performance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Performance"
+
+  /performances/{id}:
+    get:
+      operationId: getPerformance
+      tags: [performances]
+      summary: Get a performance by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Performance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Performance"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updatePerformance
+      tags: [performances]
+      summary: Update a performance
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PerformanceUpdate"
+      responses:
+        "200":
+          description: Updated performance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Performance"
+    delete:
+      operationId: deletePerformance
+      tags: [performances]
+      summary: Delete a performance
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Tasks (Odoo) ───────────────────────────────────────────────────────────
+  /tasks:
+    get:
+      operationId: listTasks
+      tags: [tasks]
+      summary: List tasks from Odoo
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: stage
+          schema:
+            type: ["string", "null"]
+            enum: [todo, in_progress, done, cancelled, null]
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a task in Odoo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Created task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    patch:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update a task in Odoo
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    delete:
+      operationId: deleteTask
+      tags: [tasks]
+      summary: Delete a task in Odoo
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Reports ────────────────────────────────────────────────────────────────
+  /reports/enrollment:
+    get:
+      operationId: getEnrollmentReport
+      tags: [reports]
+      summary: Students enrolled per class
+      responses:
+        "200":
+          description: Enrollment report
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnrollmentStat"
+
+  /reports/finances:
+    get:
+      operationId: getFinanceReport
+      tags: [reports]
+      summary: Monthly revenue breakdown
+      parameters:
+        - in: query
+          name: year
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Finance report
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MonthlyRevenue"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +688,556 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    DashboardStats:
+      type: object
+      properties:
+        totalStudents:
+          type: integer
+        activeClasses:
+          type: integer
+        upcomingPerformances:
+          type: integer
+        totalDonations:
+          type: number
+        openTasks:
+          type: integer
+        monthlyRevenue:
+          type: number
+        pendingInvoices:
+          type: integer
+        newContactsThisMonth:
+          type: integer
+      required:
+        - totalStudents
+        - activeClasses
+        - upcomingPerformances
+        - totalDonations
+        - openTasks
+        - monthlyRevenue
+        - pendingInvoices
+        - newContactsThisMonth
+
+    # ── Student ────────────────────────────────────────────────────────────
+    Student:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        dateOfBirth:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, inactive]
+        enrolledClassIds:
+          type: array
+          items:
+            type: integer
+        guardianName:
+          type: ["string", "null"]
+        guardianPhone:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, firstName, lastName, status, enrolledClassIds, createdAt]
+
+    StudentInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        dateOfBirth:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        enrolledClassIds:
+          type: array
+          items:
+            type: integer
+        guardianName:
+          type: string
+        guardianPhone:
+          type: string
+        notes:
+          type: string
+      required: [firstName, lastName]
+
+    StudentUpdate:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        dateOfBirth:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        enrolledClassIds:
+          type: array
+          items:
+            type: integer
+        guardianName:
+          type: string
+        guardianPhone:
+          type: string
+        notes:
+          type: string
+
+    # ── DanceClass ─────────────────────────────────────────────────────────
+    DanceClass:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        style:
+          type: string
+        instructor:
+          type: string
+        schedule:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: integer
+        enrolledCount:
+          type: integer
+        status:
+          type: string
+          enum: [active, inactive]
+        description:
+          type: ["string", "null"]
+        ageGroup:
+          type: ["string", "null"]
+        fee:
+          type: ["number", "null"]
+        createdAt:
+          type: string
+      required: [id, name, style, instructor, schedule, location, capacity, enrolledCount, status, createdAt]
+
+    ClassInput:
+      type: object
+      properties:
+        name:
+          type: string
+        style:
+          type: string
+        instructor:
+          type: string
+        schedule:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: integer
+        status:
+          type: string
+          enum: [active, inactive]
+        description:
+          type: string
+        ageGroup:
+          type: string
+        fee:
+          type: number
+      required: [name, style, instructor, schedule, location, capacity]
+
+    ClassUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        style:
+          type: string
+        instructor:
+          type: string
+        schedule:
+          type: string
+        location:
+          type: string
+        capacity:
+          type: integer
+        status:
+          type: string
+          enum: [active, inactive]
+        description:
+          type: string
+        ageGroup:
+          type: string
+        fee:
+          type: number
+
+    # ── Contact ────────────────────────────────────────────────────────────
+    Contact:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        type:
+          type: string
+          enum: [individual, company]
+        company:
+          type: ["string", "null"]
+        street:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        odooId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+      required: [id, name, type, createdAt]
+
+    ContactInput:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        type:
+          type: string
+          enum: [individual, company]
+        company:
+          type: string
+        street:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+      required: [name]
+
+    ContactUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        type:
+          type: string
+          enum: [individual, company]
+        company:
+          type: string
+        street:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+
+    # ── Donation ───────────────────────────────────────────────────────────
+    Donation:
+      type: object
+      properties:
+        id:
+          type: integer
+        donorName:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        date:
+          type: string
+        status:
+          type: string
+          enum: [draft, confirmed, paid, cancelled]
+        campaign:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        odooId:
+          type: ["integer", "null"]
+      required: [id, donorName, amount, currency, date, status]
+
+    DonationInput:
+      type: object
+      properties:
+        donorName:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        date:
+          type: string
+        status:
+          type: string
+          enum: [draft, confirmed, paid, cancelled]
+        campaign:
+          type: string
+        notes:
+          type: string
+      required: [donorName, amount, date]
+
+    # ── Invoice ────────────────────────────────────────────────────────────
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        partnerName:
+          type: string
+        amountTotal:
+          type: number
+        amountDue:
+          type: number
+        currency:
+          type: string
+        invoiceDate:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        state:
+          type: string
+          enum: [draft, posted, cancelled]
+        paymentState:
+          type: string
+          enum: [not_paid, in_payment, paid, partial, reversed, null]
+        odooId:
+          type: ["integer", "null"]
+      required: [id, name, partnerName, amountTotal, amountDue, currency, state, paymentState]
+
+    FinancialSummary:
+      type: object
+      properties:
+        totalRevenue:
+          type: number
+        totalOutstanding:
+          type: number
+        totalPaid:
+          type: number
+        overdueCount:
+          type: integer
+        draftCount:
+          type: integer
+        currency:
+          type: string
+      required: [totalRevenue, totalOutstanding, totalPaid, overdueCount, draftCount, currency]
+
+    # ── Performance ────────────────────────────────────────────────────────
+    Performance:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        date:
+          type: string
+        time:
+          type: ["string", "null"]
+        venue:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [upcoming, completed, cancelled]
+        participatingClassIds:
+          type: array
+          items:
+            type: integer
+        ticketPrice:
+          type: ["number", "null"]
+        capacity:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+      required: [id, title, date, venue, status, participatingClassIds, createdAt]
+
+    PerformanceInput:
+      type: object
+      properties:
+        title:
+          type: string
+        date:
+          type: string
+        time:
+          type: string
+        venue:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [upcoming, completed, cancelled]
+        participatingClassIds:
+          type: array
+          items:
+            type: integer
+        ticketPrice:
+          type: number
+        capacity:
+          type: integer
+      required: [title, date, venue]
+
+    PerformanceUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        date:
+          type: string
+        time:
+          type: string
+        venue:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [upcoming, completed, cancelled]
+        participatingClassIds:
+          type: array
+          items:
+            type: integer
+        ticketPrice:
+          type: number
+        capacity:
+          type: integer
+
+    # ── Task ───────────────────────────────────────────────────────────────
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        stage:
+          type: string
+          enum: [todo, in_progress, done, cancelled]
+        assigneeName:
+          type: ["string", "null"]
+        deadline:
+          type: ["string", "null"]
+        priority:
+          type: string
+          enum: [low, normal, high]
+        projectName:
+          type: ["string", "null"]
+        odooId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+      required: [id, title, stage, priority, createdAt]
+
+    TaskInput:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        stage:
+          type: string
+          enum: [todo, in_progress, done, cancelled]
+        assigneeName:
+          type: string
+        deadline:
+          type: string
+        priority:
+          type: string
+          enum: [low, normal, high]
+        projectName:
+          type: string
+      required: [title]
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        stage:
+          type: string
+          enum: [todo, in_progress, done, cancelled]
+        assigneeName:
+          type: string
+        deadline:
+          type: string
+        priority:
+          type: string
+          enum: [low, normal, high]
+        projectName:
+          type: string
+
+    # ── Reports ────────────────────────────────────────────────────────────
+    EnrollmentStat:
+      type: object
+      properties:
+        classId:
+          type: integer
+        className:
+          type: string
+        style:
+          type: string
+        enrolledCount:
+          type: integer
+        capacity:
+          type: integer
+      required: [classId, className, style, enrolledCount, capacity]
+
+    MonthlyRevenue:
+      type: object
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        invoiceCount:
+          type: integer
+        donations:
+          type: number
+      required: [month, revenue, invoiceCount, donations]
