@@ -24,13 +24,12 @@ export function isOdooConfigured(): boolean {
   return Boolean(ODOO_URL && ODOO_DB && ODOO_USERNAME && ODOO_API_KEY);
 }
 
-// ── UID cache ──────────────────────────────────────────────────────────────
-// We authenticate once per process start and cache the uid.
+// ── UID cache with promise lock ────────────────────────────────────────────
+// Ensures only one authenticate request fires even under parallel call bursts.
 let cachedUid: number | null = null;
+let authInFlight: Promise<number> | null = null;
 
-async function getUid(): Promise<number> {
-  if (cachedUid !== null) return cachedUid;
-
+async function authenticate(): Promise<number> {
   const body = {
     jsonrpc: "2.0",
     method: "call",
@@ -41,7 +40,7 @@ async function getUid(): Promise<number> {
     },
   };
 
-  const res = await fetch(`${ODOO_URL}/web/dataset/call_kw`, {
+  const res = await fetch(`${ODOO_URL}/jsonrpc`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -50,13 +49,21 @@ async function getUid(): Promise<number> {
   if (!res.ok) throw new Error(`Odoo authenticate HTTP ${res.status}`);
 
   const json = (await res.json()) as { result?: number | false; error?: { message: string } };
-
   if (json.error) throw new Error(`Odoo auth error: ${json.error.message}`);
   if (!json.result) throw new Error("Odoo authentication failed — check ODOO_USERNAME and ODOO_API_KEY");
 
   cachedUid = json.result;
   logger.info({ uid: cachedUid }, "Odoo authenticated");
   return cachedUid;
+}
+
+async function getUid(): Promise<number> {
+  if (cachedUid !== null) return cachedUid;
+  // Coalesce all concurrent callers onto the same in-flight promise
+  if (!authInFlight) {
+    authInFlight = authenticate().finally(() => { authInFlight = null; });
+  }
+  return authInFlight;
 }
 
 // ── Core RPC ───────────────────────────────────────────────────────────────
@@ -93,7 +100,7 @@ async function callOdoo<T>(opts: OdooCallOptions): Promise<T> {
     },
   };
 
-  const res = await fetch(`${ODOO_URL}/web/dataset/call_kw`, {
+  const res = await fetch(`${ODOO_URL}/jsonrpc`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
