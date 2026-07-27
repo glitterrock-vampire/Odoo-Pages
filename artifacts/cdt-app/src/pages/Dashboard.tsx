@@ -1,6 +1,11 @@
 import { useGetDashboardStats } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Calendar, Star, CheckCircle, DollarSign, FileText, Heart, Contact } from "lucide-react";
+import { Users, Calendar, Star, CheckCircle, DollarSign, FileText, Heart, Contact, AlertCircle } from "lucide-react";
+
+function fmt(value: number | null | undefined, prefix = ""): string {
+  if (value === null || value === undefined) return "—";
+  return `${prefix}${value.toLocaleString()}`;
+}
 
 export default function Dashboard() {
   const { data: stats, isLoading } = useGetDashboardStats();
@@ -20,15 +25,17 @@ export default function Dashboard() {
 
   if (!stats) return null;
 
+  const odooConnected = (stats as { odooConfigured?: boolean }).odooConfigured ?? true;
+
   const cards = [
-    { title: "Total Students", value: stats.totalStudents, icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { title: "Active Classes", value: stats.activeClasses, icon: Calendar, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { title: "Upcoming Perf.", value: stats.upcomingPerformances, icon: Star, color: "text-amber-500", bg: "bg-amber-500/10" },
-    { title: "Open Tasks", value: stats.openTasks, icon: CheckCircle, color: "text-purple-500", bg: "bg-purple-500/10" },
-    { title: "Monthly Revenue", value: `$${stats.monthlyRevenue.toLocaleString()}`, icon: DollarSign, color: "text-primary", bg: "bg-primary/10" },
-    { title: "Total Donations", value: `$${stats.totalDonations.toLocaleString()}`, icon: Heart, color: "text-rose-500", bg: "bg-rose-500/10" },
-    { title: "Pending Invoices", value: stats.pendingInvoices, icon: FileText, color: "text-orange-500", bg: "bg-orange-500/10" },
-    { title: "New Contacts", value: stats.newContactsThisMonth, icon: Contact, color: "text-indigo-500", bg: "bg-indigo-500/10" },
+    { title: "Total Students",    value: fmt(stats.totalStudents),          icon: Users,        color: "text-blue-500",    bg: "bg-blue-500/10",    odoo: false },
+    { title: "Active Classes",    value: fmt(stats.activeClasses),          icon: Calendar,     color: "text-emerald-500", bg: "bg-emerald-500/10", odoo: false },
+    { title: "Upcoming Perf.",    value: fmt(stats.upcomingPerformances),   icon: Star,         color: "text-amber-500",   bg: "bg-amber-500/10",   odoo: false },
+    { title: "Open Tasks",        value: fmt(stats.openTasks),              icon: CheckCircle,  color: "text-purple-500",  bg: "bg-purple-500/10",  odoo: true  },
+    { title: "Monthly Revenue",   value: fmt(stats.monthlyRevenue, "$"),    icon: DollarSign,   color: "text-primary",     bg: "bg-primary/10",     odoo: true  },
+    { title: "Total Donations",   value: fmt(stats.totalDonations, "$"),    icon: Heart,        color: "text-rose-500",    bg: "bg-rose-500/10",    odoo: true  },
+    { title: "Pending Invoices",  value: fmt(stats.pendingInvoices),        icon: FileText,     color: "text-orange-500",  bg: "bg-orange-500/10",  odoo: true  },
+    { title: "New Contacts",      value: fmt(stats.newContactsThisMonth),   icon: Contact,      color: "text-indigo-500",  bg: "bg-indigo-500/10",  odoo: true  },
   ];
 
   return (
@@ -37,6 +44,16 @@ export default function Dashboard() {
         <h1 className="text-4xl font-extrabold tracking-tight text-primary font-display">Dashboard</h1>
         <p className="text-muted-foreground mt-2 text-lg">Welcome back to CDT Jamaica. Here's your overview.</p>
       </div>
+
+      {!odooConnected && (
+        <div className="flex items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>
+            Odoo is not connected — live tasks, revenue, donations, invoices, and contacts are unavailable.
+            Set <code className="font-mono font-semibold">ODOO_URL</code>, <code className="font-mono font-semibold">ODOO_DB</code>, and <code className="font-mono font-semibold">ODOO_API_KEY</code> in environment secrets to enable them.
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {cards.map((c, i) => (
@@ -48,7 +65,12 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-black font-display text-primary">{c.value}</div>
+              <div className={`text-3xl font-black font-display ${c.odoo && !odooConnected ? "text-muted-foreground/40" : "text-primary"}`}>
+                {c.value}
+              </div>
+              {c.odoo && !odooConnected && (
+                <p className="text-xs text-muted-foreground mt-1">Requires Odoo</p>
+              )}
             </CardContent>
           </Card>
         ))}
