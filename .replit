@@ -21,3 +21,9 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+ODOO_DB = "tobago-east-med"
+ODOO_URL = "https://tobago-east-med.odoo.com"

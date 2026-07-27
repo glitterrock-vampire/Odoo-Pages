@@ -3,8 +3,8 @@
  * Uses Odoo's JSON-RPC API with API key authentication.
  *
  * Required env vars:
- *   ODOO_URL      – e.g. https://dance-school-crm.odoo.com
- *   ODOO_DB       – e.g. dance-school-crm
+ *   ODOO_URL      – https://tobago-east-med.odoo.com
+ *   ODOO_DB       – tobago-east-med
  *   ODOO_API_KEY  – API key from Odoo Settings → Technical → API Keys
  */
 
