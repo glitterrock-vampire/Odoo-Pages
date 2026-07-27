@@ -1,84 +1,107 @@
 /**
- * Odoo JSON-RPC client utility.
- * Uses Odoo's JSON-RPC API with API key authentication.
+ * Odoo JSON-RPC client.
+ *
+ * Authentication flow (works on Odoo 14-17):
+ *   1. POST /web/dataset/call_kw  method=common.authenticate  → uid (number)
+ *   2. POST /web/dataset/call_kw  method=execute_kw           → data
+ *      args: [DB, uid, API_KEY, model, method, positional, keyword]
  *
  * Required env vars:
- *   ODOO_URL      – https://tobago-east-med.odoo.com
- *   ODOO_DB       – tobago-east-med
- *   ODOO_API_KEY  – API key from Odoo Settings → Technical → API Keys
+ *   ODOO_URL       – https://tobago-east-med.odoo.com
+ *   ODOO_DB        – tobago-east-med
+ *   ODOO_USERNAME  – login email for the Odoo user (non-secret)
+ *   ODOO_API_KEY   – API key from Odoo avatar → My Profile → Account Security → New API Key
  */
 
 import { logger } from "./logger";
 
-const ODOO_URL = process.env.ODOO_URL ?? "";
-const ODOO_DB = process.env.ODOO_DB ?? "";
-const ODOO_API_KEY = process.env.ODOO_API_KEY ?? "";
+const ODOO_URL      = process.env.ODOO_URL      ?? "";
+const ODOO_DB       = process.env.ODOO_DB       ?? "";
+const ODOO_USERNAME = process.env.ODOO_USERNAME  ?? "";
+const ODOO_API_KEY  = process.env.ODOO_API_KEY   ?? "";
 
 export function isOdooConfigured(): boolean {
-  return Boolean(ODOO_URL && ODOO_DB && ODOO_API_KEY);
+  return Boolean(ODOO_URL && ODOO_DB && ODOO_USERNAME && ODOO_API_KEY);
 }
 
-interface OdooJsonRpcRequest {
-  model: string;
-  method: string;
-  args: unknown[];
-  kwargs?: Record<string, unknown>;
-}
+// ── UID cache ──────────────────────────────────────────────────────────────
+// We authenticate once per process start and cache the uid.
+let cachedUid: number | null = null;
 
-async function callOdoo<T>(req: OdooJsonRpcRequest): Promise<T> {
-  if (!isOdooConfigured()) {
-    throw new Error("Odoo is not configured. Set ODOO_URL, ODOO_DB, and ODOO_API_KEY.");
-  }
+async function getUid(): Promise<number> {
+  if (cachedUid !== null) return cachedUid;
 
   const body = {
     jsonrpc: "2.0",
     method: "call",
-    id: Date.now(),
+    params: {
+      service: "common",
+      method: "authenticate",
+      args: [ODOO_DB, ODOO_USERNAME, ODOO_API_KEY, {}],
+    },
+  };
+
+  const res = await fetch(`${ODOO_URL}/web/dataset/call_kw`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) throw new Error(`Odoo authenticate HTTP ${res.status}`);
+
+  const json = (await res.json()) as { result?: number | false; error?: { message: string } };
+
+  if (json.error) throw new Error(`Odoo auth error: ${json.error.message}`);
+  if (!json.result) throw new Error("Odoo authentication failed — check ODOO_USERNAME and ODOO_API_KEY");
+
+  cachedUid = json.result;
+  logger.info({ uid: cachedUid }, "Odoo authenticated");
+  return cachedUid;
+}
+
+// ── Core RPC ───────────────────────────────────────────────────────────────
+
+interface OdooCallOptions {
+  model: string;
+  method: string;
+  args?: unknown[];
+  kwargs?: Record<string, unknown>;
+}
+
+async function callOdoo<T>(opts: OdooCallOptions): Promise<T> {
+  if (!isOdooConfigured()) {
+    throw new Error("Odoo is not configured. Set ODOO_URL, ODOO_DB, ODOO_USERNAME, and ODOO_API_KEY.");
+  }
+
+  const uid = await getUid();
+
+  const body = {
+    jsonrpc: "2.0",
+    method: "call",
     params: {
       service: "object",
       method: "execute_kw",
       args: [
         ODOO_DB,
-        // For API key auth we pass the API key as the user id (numeric user)
-        // and the API key as the password in the standard auth call.
-        // But for execute_kw with API key we use uid=1 and password=apikey.
-        // Actually Odoo API key auth: uid is resolved via /web/session/authenticate
-        // Simpler: use the /api endpoint for Odoo 17+
-        ...req.args,
+        uid,
+        ODOO_API_KEY,
+        opts.model,
+        opts.method,
+        opts.args ?? [],
+        opts.kwargs ?? {},
       ],
     },
   };
 
-  // Use the newer /api REST endpoint (Odoo 17+) or fall back to JSON-RPC
-  const endpoint = `${ODOO_URL}/web/dataset/call_kw`;
-
-  const rpcBody = {
-    jsonrpc: "2.0",
-    method: "call",
-    params: {
-      model: req.model,
-      method: req.method,
-      args: req.args,
-      kwargs: req.kwargs ?? {},
-    },
-  };
-
-  const response = await fetch(endpoint, {
+  const res = await fetch(`${ODOO_URL}/web/dataset/call_kw`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      // API key authentication header for Odoo 16+
-      Authorization: `Bearer ${ODOO_API_KEY}`,
-    },
-    body: JSON.stringify(rpcBody),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
 
-  if (!response.ok) {
-    logger.error({ status: response.status, url: endpoint }, "Odoo HTTP error");
-    throw new Error(`Odoo request failed: ${response.status}`);
-  }
+  if (!res.ok) throw new Error(`Odoo HTTP ${res.status}`);
 
-  const json = (await response.json()) as { result?: T; error?: { message: string; data?: { message?: string } } };
+  const json = (await res.json()) as { result?: T; error?: { message: string; data?: { message?: string } } };
 
   if (json.error) {
     const msg = json.error.data?.message ?? json.error.message;
@@ -142,27 +165,14 @@ export async function createOdooPartner(data: {
   street?: string;
   city?: string;
 }): Promise<number> {
-  return callOdoo<number>({
-    model: "res.partner",
-    method: "create",
-    args: [data],
-  });
+  return callOdoo<number>({ model: "res.partner", method: "create", args: [data] });
 }
 
-export async function updateOdooPartner(id: number, data: Partial<{
-  name: string;
-  email: string;
-  phone: string;
-  is_company: boolean;
-  company_name: string;
-  street: string;
-  city: string;
-}>): Promise<boolean> {
-  return callOdoo<boolean>({
-    model: "res.partner",
-    method: "write",
-    args: [[id], data],
-  });
+export async function updateOdooPartner(
+  id: number,
+  data: Partial<{ name: string; email: string; phone: string; is_company: boolean; company_name: string; street: string; city: string }>
+): Promise<boolean> {
+  return callOdoo<boolean>({ model: "res.partner", method: "write", args: [[id], data] });
 }
 
 // ── Invoices ───────────────────────────────────────────────────────────────
@@ -197,15 +207,8 @@ export async function listOdooInvoices(search = "", state?: string, limit = 100)
   });
 }
 
-export async function getOdooFinancialSummary(): Promise<{
-  totalRevenue: number;
-  totalOutstanding: number;
-  totalPaid: number;
-  overdueCount: number;
-  draftCount: number;
-  currency: string;
-}> {
-  const [all, overdue, drafts] = await Promise.all([
+export async function getOdooFinancialSummary() {
+  const [all, overdueIds, draftIds] = await Promise.all([
     callOdoo<OdooInvoice[]>({
       model: "account.move",
       method: "search_read",
@@ -224,18 +227,13 @@ export async function getOdooFinancialSummary(): Promise<{
     }),
   ]);
 
-  const totalRevenue = all.reduce((s, i) => s + i.amount_total, 0);
-  const totalOutstanding = all.filter(i => i.payment_state !== "paid").reduce((s, i) => s + i.amount_residual, 0);
-  const totalPaid = all.filter(i => i.payment_state === "paid").reduce((s, i) => s + i.amount_total, 0);
-  const currency = all[0]?.currency_id?.[1] ?? "JMD";
-
   return {
-    totalRevenue,
-    totalOutstanding,
-    totalPaid,
-    overdueCount: overdue.length,
-    draftCount: drafts.length,
-    currency,
+    totalRevenue:    all.reduce((s, i) => s + i.amount_total, 0),
+    totalOutstanding: all.filter(i => i.payment_state !== "paid").reduce((s, i) => s + i.amount_residual, 0),
+    totalPaid:       all.filter(i => i.payment_state === "paid").reduce((s, i) => s + i.amount_total, 0),
+    overdueCount:    overdueIds.length,
+    draftCount:      draftIds.length,
+    currency:        all[0]?.currency_id?.[1] ?? "JMD",
   };
 }
 
@@ -267,9 +265,9 @@ export async function listOdooDonations(search = "", status?: string, limit = 10
         order: "donation_date desc",
       },
     });
-  } catch {
-    // donation.donation model may not be installed; return empty
-    logger.warn("donation.donation model not available in Odoo");
+  } catch (err) {
+    // donation.donation module may not be installed
+    logger.warn({ err }, "donation.donation model not available — module may not be installed");
     return [];
   }
 }
@@ -297,11 +295,7 @@ export async function createOdooDonation(data: {
   donation_date: string;
   state?: string;
 }): Promise<number> {
-  return callOdoo<number>({
-    model: "donation.donation",
-    method: "create",
-    args: [data],
-  });
+  return callOdoo<number>({ model: "donation.donation", method: "create", args: [data] });
 }
 
 // ── Tasks ──────────────────────────────────────────────────────────────────
@@ -318,18 +312,7 @@ export interface OdooTask {
   create_date: string;
 }
 
-const STAGE_MAP: Record<string, string> = {
-  todo: "todo",
-  "In Progress": "in_progress",
-  Done: "done",
-  Cancelled: "cancelled",
-};
-
-const STAGE_REVERSE: Record<string, string> = Object.fromEntries(
-  Object.entries(STAGE_MAP).map(([k, v]) => [v, k])
-);
-
-export async function listOdooTasks(search = "", stage?: string, limit = 100): Promise<OdooTask[]> {
+export async function listOdooTasks(search = "", _stage?: string, limit = 100): Promise<OdooTask[]> {
   const domain: unknown[] = [["active", "=", true]];
   if (search) domain.push(["name", "ilike", search]);
 
@@ -351,30 +334,16 @@ export async function createOdooTask(data: {
   date_deadline?: string;
   priority?: string;
 }): Promise<number> {
-  return callOdoo<number>({
-    model: "project.task",
-    method: "create",
-    args: [data],
-  });
+  return callOdoo<number>({ model: "project.task", method: "create", args: [data] });
 }
 
-export async function updateOdooTask(id: number, data: Partial<{
-  name: string;
-  description: string;
-  date_deadline: string;
-  priority: string;
-}>): Promise<boolean> {
-  return callOdoo<boolean>({
-    model: "project.task",
-    method: "write",
-    args: [[id], data],
-  });
+export async function updateOdooTask(
+  id: number,
+  data: Partial<{ name: string; description: string; date_deadline: string; priority: string }>
+): Promise<boolean> {
+  return callOdoo<boolean>({ model: "project.task", method: "write", args: [[id], data] });
 }
 
 export async function deleteOdooTask(id: number): Promise<boolean> {
-  return callOdoo<boolean>({
-    model: "project.task",
-    method: "unlink",
-    args: [[id]],
-  });
+  return callOdoo<boolean>({ model: "project.task", method: "unlink", args: [[id]] });
 }
