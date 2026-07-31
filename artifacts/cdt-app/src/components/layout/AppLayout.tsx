@@ -76,12 +76,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </a>
       <aside className="z-30 flex w-full shrink-0 flex-col border-sidebar-border bg-sidebar text-sidebar-foreground md:fixed md:inset-y-0 md:w-60 md:border-r">
         <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4 md:h-[76px] md:px-5">
-          <div className="flex h-10 w-10 items-center justify-center border border-white/25 bg-white/5 font-display text-sm font-bold tracking-[0.12em] text-white">
-            CDT
-          </div>
+          <img
+            src="/branding/cdt-logo.png"
+            alt="CDT Jamaica"
+            width={1920}
+            height={1080}
+            className="h-11 w-[98px] shrink-0 object-contain object-left brightness-0 invert"
+          />
           <div className="min-w-0">
-            <p className="truncate font-display text-sm font-semibold text-white">CDT Jamaica</p>
-            <p className="text-xs tracking-wide text-sidebar-foreground/65">Administration</p>
+            <p className="truncate font-display text-sm font-semibold text-white">Admin portal</p>
+            <p className="text-xs tracking-wide text-sidebar-foreground/65">Operations</p>
           </div>
           <button
             type="button"

@@ -2,6 +2,8 @@
 
 from datetime import date, datetime
 
+from ..hooks import apply_branding
+
 
 DEMO_TAG = "CDT company demo"
 
@@ -15,10 +17,7 @@ def _one(env, model, domain, values):
 
 
 def run(env):
-    websites = env["website"].search([])
-    if websites:
-        websites.write({"name": "CDT Jamaica"})
-    env.company.write({"name": "CDT Jamaica"})
+    apply_branding(env)
 
     program = env["cdt.program"].search([], limit=1)
     academic_year = env["cdt.academic.year"].search([], order="id desc", limit=1)
