@@ -41,7 +41,7 @@
     <field name="name">Instructors see their schedules</field>
     <field name="model_id" ref="model_cdt_course_schedule"/>
     <field name="groups" eval="[(4, ref('group_education_instructor'))]"/>
-    <field name="domain_force">['|', ('instructor_id.user_id', '=', user.id), ('instructor_id.user_id', '=', False)]</field>
+    <field name="domain_force">[('instructor_id.user_id', '=', user.id)]</field>
   </record>
   <record id="rule_manager_all_schedules" model="ir.rule">
     <field name="name">Education managers see all schedules</field>
@@ -54,11 +54,37 @@
     <field name="name">Instructors see their assessments</field>
     <field name="model_id" ref="model_cdt_assessment_plan"/>
     <field name="groups" eval="[(4, ref('group_education_instructor'))]"/>
-    <field name="domain_force">['|', '|', ('examiner_id.user_id', '=', user.id), ('supervisor_id.user_id', '=', user.id), '&amp;', ('examiner_id', '=', False), ('supervisor_id', '=', False)]</field>
+    <field name="domain_force">['|', ('examiner_id.user_id', '=', user.id), ('supervisor_id.user_id', '=', user.id)]</field>
   </record>
   <record id="rule_manager_all_assessments" model="ir.rule">
     <field name="name">Education managers see all assessments</field>
     <field name="model_id" ref="model_cdt_assessment_plan"/>
+    <field name="groups" eval="[(4, ref('group_education_manager'))]"/>
+    <field name="domain_force">[(1, '=', 1)]</field>
+  </record>
+
+  <record id="rule_instructor_assigned_attendance" model="ir.rule">
+    <field name="name">Instructors see attendance for assigned groups</field>
+    <field name="model_id" ref="model_cdt_student_attendance"/>
+    <field name="groups" eval="[(4, ref('group_education_instructor'))]"/>
+    <field name="domain_force">[('student_group_id.instructor_ids.user_id', '=', user.id)]</field>
+  </record>
+  <record id="rule_manager_all_attendance" model="ir.rule">
+    <field name="name">Education managers see all attendance</field>
+    <field name="model_id" ref="model_cdt_student_attendance"/>
+    <field name="groups" eval="[(4, ref('group_education_manager'))]"/>
+    <field name="domain_force">[(1, '=', 1)]</field>
+  </record>
+
+  <record id="rule_instructor_assigned_leave" model="ir.rule">
+    <field name="name">Instructors see leave for assigned groups</field>
+    <field name="model_id" ref="model_cdt_student_leave"/>
+    <field name="groups" eval="[(4, ref('group_education_instructor'))]"/>
+    <field name="domain_force">[('student_group_id.instructor_ids.user_id', '=', user.id)]</field>
+  </record>
+  <record id="rule_manager_all_leave" model="ir.rule">
+    <field name="name">Education managers see all leave</field>
+    <field name="model_id" ref="model_cdt_student_leave"/>
     <field name="groups" eval="[(4, ref('group_education_manager'))]"/>
     <field name="domain_force">[(1, '=', 1)]</field>
   </record>

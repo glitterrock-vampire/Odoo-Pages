@@ -354,6 +354,16 @@ export interface DonationInput {
   notes?: string;
 }
 
+export type TuitionFeeChargeType = typeof TuitionFeeChargeType[keyof typeof TuitionFeeChargeType];
+
+
+export const TuitionFeeChargeType = {
+  tuition: 'tuition',
+  deposit: 'deposit',
+  installment: 'installment',
+  adjustment: 'adjustment',
+} as const;
+
 export type TuitionFeeStatus = typeof TuitionFeeStatus[keyof typeof TuitionFeeStatus];
 
 
@@ -399,10 +409,17 @@ export interface TuitionFee {
   /** @nullable */
   feeSchedule: string | null;
   feeStructure: string;
+  chargeType: TuitionFeeChargeType;
+  /** @nullable */
+  payerName: string | null;
   dueDate: string;
   amount: number;
   amountPaid: number;
   balance: number;
+  /** @minimum 0 */
+  daysOverdue: number;
+  /** @minimum 0 */
+  reminderCount: number;
   currency: string;
   status: TuitionFeeStatus;
   overdue: boolean;
@@ -421,6 +438,68 @@ export interface TuitionFee {
   classIds: number[];
   classNames: string[];
   sampleData: boolean;
+}
+
+export type AttendanceRecordStatus = typeof AttendanceRecordStatus[keyof typeof AttendanceRecordStatus];
+
+
+export const AttendanceRecordStatus = {
+  present: 'present',
+  late: 'late',
+  absent: 'absent',
+  leave: 'leave',
+  excused: 'excused',
+} as const;
+
+export interface AttendanceRecord {
+  id: number;
+  date: string;
+  studentId: number;
+  studentName: string;
+  groupId: number;
+  groupName: string;
+  /** @nullable */
+  courseId: number | null;
+  /** @nullable */
+  courseName: string | null;
+  /** @nullable */
+  scheduleId: number | null;
+  /** @nullable */
+  scheduleName: string | null;
+  status: AttendanceRecordStatus;
+  /** @minimum 0 */
+  minutesLate: number;
+  /** @minimum 0 */
+  earlyDepartureMinutes: number;
+  /** @nullable */
+  checkIn: string | null;
+  /** @nullable */
+  checkOut: string | null;
+  /** @nullable */
+  remarks: string | null;
+}
+
+export interface AttendanceSummary {
+  total: number;
+  present: number;
+  late: number;
+  absent: number;
+  leave: number;
+  excused: number;
+  /** Percentage of matching records marked present or late. */
+  attendanceRate: number;
+  todayTotal: number;
+  todayPresent: number;
+  todayLate: number;
+  todayAbsent: number;
+  /** Percentage of today's Jamaica-local records marked present or late. */
+  todayRate: number;
+}
+
+export interface AttendanceSnapshot {
+  generatedAt: string;
+  summary: AttendanceSummary;
+  records: AttendanceRecord[];
 }
 
 export type InvoiceState = typeof InvoiceState[keyof typeof InvoiceState];
@@ -460,6 +539,29 @@ export interface Invoice {
   odooId?: string | null;
 }
 
+export type FinancialFundSummaryRestriction = typeof FinancialFundSummaryRestriction[keyof typeof FinancialFundSummaryRestriction];
+
+
+export const FinancialFundSummaryRestriction = {
+  unrestricted: 'unrestricted',
+  temporary: 'temporary',
+  permanent: 'permanent',
+} as const;
+
+export interface FinancialFundSummary {
+  id: number;
+  name: string;
+  code: string;
+  restriction: FinancialFundSummaryRestriction;
+  /** @nullable */
+  purpose?: string | null;
+  targetAmount: number;
+  pledgedAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  currency: string;
+}
+
 export interface FinancialSummary {
   totalRevenue: number;
   totalOutstanding: number;
@@ -467,6 +569,7 @@ export interface FinancialSummary {
   overdueCount: number;
   draftCount: number;
   currency: string;
+  funds: FinancialFundSummary[];
 }
 
 export type TeamMemberMemberType = typeof TeamMemberMemberType[keyof typeof TeamMemberMemberType];
@@ -858,6 +961,25 @@ export const ListTuitionFeesStatus = {
   partial: 'partial',
   paid: 'paid',
   cancelled: 'cancelled',
+} as const;
+
+export type GetAttendanceParams = {
+search?: string;
+/**
+ * @nullable
+ */
+status?: GetAttendanceStatus;
+};
+
+export type GetAttendanceStatus = typeof GetAttendanceStatus[keyof typeof GetAttendanceStatus] | null;
+
+
+export const GetAttendanceStatus = {
+  present: 'present',
+  late: 'late',
+  absent: 'absent',
+  leave: 'leave',
+  excused: 'excused',
 } as const;
 
 export type ListPerformancesParams = {

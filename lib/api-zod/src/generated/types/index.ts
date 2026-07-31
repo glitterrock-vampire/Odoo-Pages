@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './attendanceRecord';
+export * from './attendanceRecordStatus';
+export * from './attendanceSnapshot';
+export * from './attendanceSummary';
 export * from './classInput';
 export * from './classInputStatus';
 export * from './classUpdate';
@@ -25,7 +29,11 @@ export * from './donationInputStatus';
 export * from './donationStatus';
 export * from './enrollmentStat';
 export * from './errorResponse';
+export * from './financialFundSummary';
+export * from './financialFundSummaryRestriction';
 export * from './financialSummary';
+export * from './getAttendanceParams';
+export * from './getAttendanceStatus';
 export * from './getFinanceReportParams';
 export * from './healthStatus';
 export * from './invoice';
@@ -76,6 +84,7 @@ export * from './taskUpdateStage';
 export * from './teamMember';
 export * from './teamMemberMemberType';
 export * from './tuitionFee';
+export * from './tuitionFeeChargeType';
 export * from './tuitionFeeInvoiceState';
 export * from './tuitionFeePaymentState';
 export * from './tuitionFeeStatus';

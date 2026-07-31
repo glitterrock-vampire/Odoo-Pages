@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, DollarSign, ArrowUpRight, AlertCircle, FileText } from "lucide-react";
+import { Search, DollarSign, ArrowUpRight, AlertCircle, FileText, Landmark, ShieldCheck, Target } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 export default function Finances() {
@@ -12,6 +12,15 @@ export default function Finances() {
   const { data: invoicesResponse, isLoading: isLoadingInvoices, isError: isInvoicesError } = useListInvoices({ search: search || undefined });
   const { data: summary, isLoading: isLoadingSummary, isError: isSummaryError } = useGetFinancialSummary();
   const invoices = Array.isArray(invoicesResponse) ? invoicesResponse : [];
+  const funds = Array.isArray(summary?.funds) ? summary.funds : [];
+  const restrictedFundCount = funds.filter((fund) => fund.restriction !== "unrestricted").length;
+
+  const money = (value: number, currency: string) => `${currency} ${new Intl.NumberFormat("en-JM", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(value)}`;
+  const restrictionLabel = (restriction: string) => {
+    if (restriction === "temporary") return "Temporarily restricted";
+    if (restriction === "permanent") return "Permanently restricted";
+    return "Unrestricted";
+  };
 
   const getPaymentStateColor = (state: string) => {
     switch (state) {
@@ -26,8 +35,9 @@ export default function Finances() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Invoices</h1>
-        <p className="text-muted-foreground mt-1">Customer invoices, payments, and financial overview from Odoo.</p>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Accounting</p>
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground md:text-3xl">School finances</h1>
+        <p className="text-muted-foreground mt-1">Customer invoices, collections, overdue balances, and donor-restricted funds from Odoo.</p>
       </div>
 
       {isLoadingSummary ? (
@@ -43,7 +53,7 @@ export default function Finances() {
           <Card className="border-primary bg-primary text-primary-foreground">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-primary-foreground/80 uppercase tracking-wider">Total Revenue</p>
+                <p className="text-sm font-semibold text-primary-foreground/80 uppercase tracking-wider">Posted Invoices</p>
                 <DollarSign className="w-5 h-5 text-primary-foreground/80" />
               </div>
               <div className="mt-3 font-display text-3xl font-semibold">{summary.currency} {summary.totalRevenue.toLocaleString()}</div>
@@ -77,6 +87,40 @@ export default function Finances() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {!isLoadingSummary && !isSummaryError && summary && (
+        <section aria-labelledby="funds-heading" className="overflow-hidden border bg-card">
+          <div className="flex flex-col justify-between gap-3 border-b px-5 py-4 sm:flex-row sm:items-start">
+            <div>
+              <div className="flex items-center gap-2"><Landmark aria-hidden="true" className="h-5 w-5 text-primary"/><h2 id="funds-heading" className="font-display text-lg font-semibold">Donor and restricted funds</h2></div>
+              <p className="mt-1 text-sm text-muted-foreground">Purpose restrictions, fundraising targets, pledges, and confirmed collections remain visible for stewardship reporting.</p>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground"><ShieldCheck aria-hidden="true" className="h-4 w-4"/>{restrictedFundCount} restricted {restrictedFundCount === 1 ? "fund" : "funds"}</div>
+          </div>
+          {funds.length === 0 ? (
+            <div className="px-5 py-10 text-center"><Target aria-hidden="true" className="mx-auto h-8 w-8 text-primary/45"/><p className="mt-3 font-semibold">No donor funds configured</p><p className="mt-1 text-sm text-muted-foreground">Create a fund in Odoo and assign donations to it to track targets and restrictions here.</p></div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-sm">
+                <thead className="border-b bg-muted/30 text-left"><tr><th className="px-5 py-3 font-semibold">Fund</th><th className="px-5 py-3 font-semibold">Restriction</th><th className="px-5 py-3 text-right font-semibold">Target</th><th className="px-5 py-3 text-right font-semibold">Pledged</th><th className="px-5 py-3 text-right font-semibold">Paid</th><th className="px-5 py-3 text-right font-semibold">Remaining</th></tr></thead>
+                <tbody className="divide-y">
+                  {funds.map((fund) => (
+                    <tr key={fund.id}>
+                      <td className="px-5 py-4"><p className="font-semibold text-primary">{fund.name}</p><p className="mt-0.5 font-mono text-xs text-muted-foreground">{fund.code}</p>{fund.purpose && <p className="mt-1 max-w-md text-xs text-muted-foreground">{fund.purpose}</p>}</td>
+                      <td className="px-5 py-4"><Badge variant="outline" className={fund.restriction === "unrestricted" ? "border-slate-200 bg-slate-50 text-slate-700" : "border-amber-200 bg-amber-50 text-amber-900"}>{restrictionLabel(fund.restriction)}</Badge></td>
+                      <td className="px-5 py-4 text-right tabular-nums">{money(fund.targetAmount, fund.currency)}</td>
+                      <td className="px-5 py-4 text-right tabular-nums">{money(fund.pledgedAmount, fund.currency)}</td>
+                      <td className="px-5 py-4 text-right font-semibold tabular-nums text-emerald-700">{money(fund.paidAmount, fund.currency)}</td>
+                      <td className="px-5 py-4 text-right font-semibold tabular-nums">{money(fund.remainingAmount, fund.currency)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="border-t bg-slate-50/70 px-5 py-3 text-xs leading-5 text-muted-foreground">Invoice totals are operational billing figures, not a complete profit-and-loss statement. Final taxes, chart of accounts, bank reconciliation, and statutory reports must be configured and approved by CDT’s Jamaican accountant.</div>
+        </section>
       )}
 
       <Card className="overflow-hidden">

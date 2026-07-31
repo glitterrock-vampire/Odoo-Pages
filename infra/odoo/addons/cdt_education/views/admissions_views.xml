@@ -5,7 +5,7 @@
     <field name="model">cdt.student.admission</field>
     <field name="arch" type="xml">
       <list decoration-success="state == 'open'" decoration-muted="state in ('closed', 'cancelled')">
-        <field name="name"/><field name="program_id"/><field name="academic_year_id"/><field name="application_start"/><field name="application_end"/><field name="capacity"/><field name="application_fee"/><field name="state" widget="badge"/>
+        <field name="name"/><field name="program_id"/><field name="academic_year_id"/><field name="application_start"/><field name="application_end"/><field name="capacity"/><field name="application_count"/><field name="admitted_count"/><field name="remaining_capacity"/><field name="application_fee"/><field name="state" widget="badge"/>
       </list>
     </field>
   </record>
@@ -22,9 +22,10 @@
         <sheet>
           <div class="oe_title"><h1><field name="name"/></h1></div>
           <group>
-            <group><field name="program_id"/><field name="academic_year_id"/><field name="capacity"/><field name="published"/></group>
+            <group><field name="program_id"/><field name="academic_year_id"/><field name="capacity"/><field name="application_count" readonly="1"/><field name="admitted_count" readonly="1"/><field name="remaining_capacity" readonly="1"/><field name="published"/></group>
             <group><field name="application_start"/><field name="application_end"/><field name="minimum_age"/><field name="maximum_age"/></group>
           </group>
+          <group string="Selection Process"><field name="audition_required"/></group>
           <group string="Application Fee"><field name="application_fee"/><field name="currency_id" groups="base.group_multi_currency"/></group>
           <notebook>
             <page string="Introduction"><field name="introduction" widget="html"/></page>
@@ -43,8 +44,8 @@
     <field name="name">cdt.student.applicant.list</field>
     <field name="model">cdt.student.applicant</field>
     <field name="arch" type="xml">
-      <list decoration-success="state == 'admitted'" decoration-danger="state == 'rejected'" decoration-muted="state == 'withdrawn'">
-        <field name="name"/><field name="full_name"/><field name="program_id"/><field name="academic_year_id"/><field name="application_date"/><field name="email"/><field name="phone"/><field name="application_fee_paid"/><field name="state" widget="badge"/>
+      <list decoration-success="state == 'admitted'" decoration-info="state in ('offered', 'offer_accepted')" decoration-warning="state in ('audition', 'waitlisted')" decoration-danger="state == 'rejected'" decoration-muted="state == 'withdrawn'">
+        <field name="name"/><field name="full_name"/><field name="program_id"/><field name="academic_year_id"/><field name="application_date"/><field name="email"/><field name="phone"/><field name="audition_result" widget="badge"/><field name="application_fee_paid"/><field name="state" widget="badge"/>
       </list>
     </field>
   </record>
@@ -54,10 +55,14 @@
     <field name="arch" type="xml">
       <form>
         <header>
-          <button name="action_approve" type="object" string="Approve" class="btn-primary" invisible="state != 'applied'"/>
-          <button name="action_reject" type="object" string="Reject" invisible="state not in ('applied', 'approved')"/>
-          <button name="action_admit" type="object" string="Admit &amp; Enrol" class="btn-primary" invisible="state not in ('applied', 'approved')"/>
-          <field name="state" widget="statusbar" statusbar_visible="applied,approved,admitted,rejected"/>
+          <button name="action_schedule_audition" type="object" string="Schedule Audition" class="btn-primary" invisible="state != 'applied'"/>
+          <button name="action_approve" type="object" string="Approve" class="btn-primary" invisible="state not in ('applied', 'audition', 'waitlisted')"/>
+          <button name="action_waitlist" type="object" string="Waitlist" invisible="state not in ('applied', 'audition', 'approved')"/>
+          <button name="action_offer" type="object" string="Queue Enrollment Offer" class="btn-primary" invisible="state not in ('approved', 'waitlisted')"/>
+          <button name="action_accept_offer" type="object" string="Mark Offer Accepted" class="btn-primary" invisible="state != 'offered'"/>
+          <button name="action_reject" type="object" string="Reject" invisible="state in ('rejected', 'admitted', 'withdrawn')"/>
+          <button name="action_admit" type="object" string="Admit &amp; Enrol" class="btn-primary" invisible="state not in ('applied', 'approved', 'offer_accepted')"/>
+          <field name="state" widget="statusbar" statusbar_visible="applied,audition,approved,waitlisted,offered,offer_accepted,admitted"/>
         </header>
         <sheet>
           <div class="oe_title"><label for="name"/><h1><field name="name" readonly="1"/></h1><h2><field name="full_name" readonly="1"/></h2></div>
@@ -71,6 +76,8 @@
           </group>
           <notebook>
             <page string="Documents"><field name="document_ids"><list editable="bottom"><field name="name"/><field name="attachment_id"/><field name="verified"/><field name="verified_by_id"/><field name="verified_date"/></list></field></page>
+            <page string="Audition &amp; Offer"><group><group string="Audition"><field name="audition_datetime"/><field name="audition_location"/><field name="audition_reviewer_id"/><field name="audition_result"/><field name="audition_score"/></group><group string="Enrollment Offer"><field name="offer_sent_at" readonly="1"/><field name="offer_accepted_at" readonly="1"/></group></group><field name="audition_notes"/></page>
+            <page string="Consent Audit"><group><field name="consent_given" readonly="1"/><field name="consent_date" readonly="1"/><field name="consent_notice_version" readonly="1"/></group></page>
             <page string="Notes"><field name="notes" widget="html"/></page>
             <page string="Admission Result" invisible="state != 'admitted'"><group><field name="student_id" readonly="1"/><field name="enrollment_id" readonly="1"/></group></page>
           </notebook>

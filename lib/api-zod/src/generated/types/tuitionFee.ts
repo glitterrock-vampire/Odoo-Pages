@@ -5,6 +5,7 @@
  * CDT Jamaica Management API with Odoo Community integration
  * OpenAPI spec version: 0.1.0
  */
+import type { TuitionFeeChargeType } from './tuitionFeeChargeType';
 import type { TuitionFeeInvoiceState } from './tuitionFeeInvoiceState';
 import type { TuitionFeePaymentState } from './tuitionFeePaymentState';
 import type { TuitionFeeStatus } from './tuitionFeeStatus';
@@ -17,10 +18,17 @@ export interface TuitionFee {
   /** @nullable */
   feeSchedule: string | null;
   feeStructure: string;
+  chargeType: TuitionFeeChargeType;
+  /** @nullable */
+  payerName: string | null;
   dueDate: Date;
   amount: number;
   amountPaid: number;
   balance: number;
+  /** @minimum 0 */
+  daysOverdue: number;
+  /** @minimum 0 */
+  reminderCount: number;
   currency: string;
   status: TuitionFeeStatus;
   overdue: boolean;

@@ -1,4 +1,5 @@
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class Donation(models.Model):
@@ -44,6 +45,20 @@ class Donation(models.Model):
         required=True,
         default=lambda self: self.env.company,
     )
+    fund_id = fields.Many2one(
+        "donation.fund",
+        string="Fund",
+        ondelete="restrict",
+        check_company=True,
+        domain="[('company_id', '=', company_id)]",
+        help="Assign the donation to an unrestricted or donor-restricted fund.",
+    )
+    designation = fields.Char(
+        help="Optional donor wording or internal designation for this gift."
+    )
+    purpose = fields.Text(
+        help="Specific purpose communicated by the donor for this donation."
+    )
 
     @api.model_create_multi
     def create(self, values_list):
@@ -53,3 +68,14 @@ class Donation(models.Model):
                     "donation.donation"
                 ) or "New"
         return super().create(values_list)
+
+    @api.constrains("fund_id", "company_id")
+    def _check_fund_company(self):
+        for donation in self:
+            if (
+                donation.fund_id
+                and donation.fund_id.company_id != donation.company_id
+            ):
+                raise ValidationError(
+                    "The donation and its designated fund must belong to the same company."
+                )

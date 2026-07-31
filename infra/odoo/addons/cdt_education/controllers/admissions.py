@@ -1,5 +1,7 @@
 import base64
 
+from dateutil.relativedelta import relativedelta
+
 from odoo import fields, http
 from odoo.http import request
 
@@ -82,6 +84,19 @@ class CdtAdmissionsWebsite(http.Controller):
                 errors.append(f"{label} is required.")
         if post.get("consent") != "yes":
             errors.append("Please confirm that the information may be used to process this application.")
+        if admission.remaining_capacity <= 0:
+            errors.append("This programme has reached its available enrollment capacity.")
+        if values["date_of_birth"]:
+            try:
+                date_of_birth = fields.Date.to_date(values["date_of_birth"])
+                age = relativedelta(fields.Date.today(), date_of_birth).years
+                if age < admission.minimum_age or age > admission.maximum_age:
+                    errors.append(
+                        f"Applicants must be between {admission.minimum_age} and "
+                        f"{admission.maximum_age} years old for this intake."
+                    )
+            except (TypeError, ValueError):
+                errors.append("Enter a valid date of birth.")
 
         upload = request.httprequest.files.get("supporting_document")
         upload_data = None
@@ -112,6 +127,10 @@ class CdtAdmissionsWebsite(http.Controller):
             "guardian_email": values["guardian_email"],
             "guardian_phone": values["guardian_phone"] or False,
             "notes": values["notes"] or False,
+            "consent_given": True,
+            "consent_date": fields.Datetime.now(),
+            "consent_notice_version": "CDT Admissions Privacy Notice v1",
+            "audition_result": "pending" if admission.audition_required else "not_required",
         }
         applicant = request.env["cdt.student.applicant"].sudo().create(applicant_values)
 

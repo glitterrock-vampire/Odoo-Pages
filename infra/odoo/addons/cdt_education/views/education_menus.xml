@@ -20,7 +20,9 @@
   <menuitem id="menu_students" name="Students" parent="menu_students_root" action="action_student" sequence="10"/>
   <menuitem id="menu_guardians" name="Guardians" parent="menu_students_root" action="action_guardian" sequence="20"/>
   <menuitem id="menu_student_logs" name="Student Logs" parent="menu_students_root" action="action_student_log" sequence="30"/>
-  <menuitem id="menu_student_portal" name="Student Portal" parent="menu_students_root" action="action_student_portal" sequence="40"/>
+  <menuitem id="menu_guardian_consents" name="Family Consent Records" parent="menu_students_root" action="action_guardian_consent" sequence="40"/>
+  <menuitem id="menu_student_documents" name="Student Documents" parent="menu_students_root" action="action_student_document" sequence="50"/>
+  <menuitem id="menu_student_portal" name="Student Portal" parent="menu_students_root" action="action_student_portal" sequence="60"/>
 
   <menuitem id="menu_academics_root" name="Academics" parent="cdt_donation.menu_cdt_root" sequence="30" groups="group_education_user"/>
   <menuitem id="menu_programs" name="Programs" parent="menu_academics_root" action="action_program" sequence="10"/>

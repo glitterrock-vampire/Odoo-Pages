@@ -1,4 +1,4 @@
-import { useGetDashboardStats } from "@workspace/api-client-react";
+import { useGetAttendance, useGetDashboardStats } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import {
   AlertCircle,
@@ -14,6 +14,7 @@ import {
   Images,
   Mail,
   ClipboardList,
+  ClipboardCheck,
   Star,
   TicketCheck,
   UserRoundCheck,
@@ -40,6 +41,7 @@ function fmtSyncTime(value: string | null | undefined): string {
 
 export default function Dashboard() {
   const { data: stats, isLoading, isError } = useGetDashboardStats();
+  const { data: attendance } = useGetAttendance();
 
   if (isLoading) {
     return (
@@ -65,9 +67,10 @@ export default function Dashboard() {
   const odooConnected = stats.odooConfigured;
 
   const academicStats = [
-    { title: "Active students", value: fmt(stats.totalStudents), icon: Users },
-    { title: "Active classes", value: fmt(stats.activeClasses), icon: Calendar },
-    { title: "Upcoming performances", value: fmt(stats.upcomingPerformances), icon: Star },
+    { title: "Active students", value: fmt(stats.totalStudents), icon: Users, href: "/students" },
+    { title: "Active classes", value: fmt(stats.activeClasses), icon: Calendar, href: "/classes" },
+    { title: "Today's attendance", value: attendance?.summary.todayTotal ? `${attendance.summary.todayRate.toFixed(1)}%` : "Not marked", icon: ClipboardCheck, href: "/attendance" },
+    { title: "Upcoming performances", value: fmt(stats.upcomingPerformances), icon: Star, href: "/performances" },
   ];
 
   const engagementServices = [
@@ -139,15 +142,15 @@ export default function Dashboard() {
           </div>
           <span className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">Live</span>
         </div>
-        <div className="grid sm:grid-cols-3 sm:divide-x">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 lg:divide-x">
           {academicStats.map((item) => (
-            <div key={item.title} className="flex items-start justify-between gap-4 border-b p-5 last:border-b-0 sm:border-b-0">
+            <Link key={item.title} href={item.href} className="flex min-h-28 items-start justify-between gap-4 border-b p-5 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring lg:border-b-0">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">{item.title}</p>
                 <p className="mt-2 font-display text-3xl font-semibold tracking-tight text-primary">{item.value}</p>
               </div>
               <item.icon aria-hidden="true" className="h-5 w-5 text-primary/55" />
-            </div>
+            </Link>
           ))}
         </div>
       </section>

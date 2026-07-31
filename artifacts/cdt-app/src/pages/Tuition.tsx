@@ -68,6 +68,10 @@ function statusClass(status: Exclude<TuitionStatus, "all">, overdue: boolean): s
   }
 }
 
+function chargeLabel(chargeType: string): string {
+  return chargeType.charAt(0).toUpperCase() + chargeType.slice(1);
+}
+
 export default function Tuition() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<TuitionStatus>("all");
@@ -202,8 +206,9 @@ export default function Tuition() {
               ) : fees.map((fee) => (
                 <TableRow key={fee.id}>
                   <TableCell>
-                    <p className="font-mono text-xs font-semibold text-primary">{fee.reference}</p>
+                    <div className="flex flex-wrap items-center gap-2"><p className="font-mono text-xs font-semibold text-primary">{fee.reference}</p><Badge variant="outline" className="border-slate-200 bg-slate-50 text-[10px] uppercase tracking-wide text-slate-700">{chargeLabel(fee.chargeType)}</Badge></div>
                     <p className="mt-1 text-xs text-muted-foreground">{fee.feeStructure}</p>
+                    {fee.feeSchedule && <p className="mt-1 text-xs text-muted-foreground">Plan: {fee.feeSchedule}</p>}
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap items-center gap-2">
@@ -211,13 +216,14 @@ export default function Tuition() {
                       {fee.sampleData && <Badge variant="outline" className="border-violet-200 bg-violet-50 text-[10px] uppercase tracking-wide text-violet-800">Sample</Badge>}
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{fee.programName ?? "No programme"} · Contact #{fee.contactId ?? "—"}</p>
+                    {fee.payerName && <p className="mt-1 text-xs text-muted-foreground">Invoice payer: {fee.payerName}</p>}
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {fee.classNames.map((className) => <Badge key={className} variant="outline" className="bg-background text-[10px] font-medium">{className}</Badge>)}
                     </div>
                   </TableCell>
                   <TableCell>
                     <p className={fee.overdue ? "font-semibold text-destructive" : "font-medium"}>{format(parseISO(fee.dueDate), "d MMM yyyy")}</p>
-                    {fee.overdue && <p className="mt-1 text-xs font-semibold text-destructive">Overdue</p>}
+                    {fee.overdue && <p className="mt-1 text-xs font-semibold text-destructive">{fee.daysOverdue} day{fee.daysOverdue === 1 ? "" : "s"} overdue</p>}
                   </TableCell>
                   <TableCell className="text-right font-semibold tabular-nums">{money(fee.amount, fee.currency)}</TableCell>
                   <TableCell className="text-right tabular-nums">
@@ -234,6 +240,7 @@ export default function Tuition() {
                       <div>
                         <p className="font-mono text-xs font-semibold">{fee.invoiceName}</p>
                         <p className="mt-1 text-xs capitalize text-muted-foreground">{fee.paymentState?.replace("_", " ") ?? fee.invoiceState}</p>
+                        {fee.reminderCount > 0 && <p className="mt-1 text-xs text-muted-foreground">{fee.reminderCount} reminder{fee.reminderCount === 1 ? "" : "s"} queued</p>}
                       </div>
                     ) : <span className="text-sm text-muted-foreground">Not created</span>}
                   </TableCell>

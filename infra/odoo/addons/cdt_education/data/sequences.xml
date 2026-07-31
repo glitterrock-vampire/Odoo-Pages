@@ -42,6 +42,12 @@
     <field name="prefix">LEV-</field>
     <field name="padding">5</field>
   </record>
+  <record id="seq_guardian_consent" model="ir.sequence">
+    <field name="name">Guardian Consent</field>
+    <field name="code">cdt.guardian.consent</field>
+    <field name="prefix">CNS-</field>
+    <field name="padding">5</field>
+  </record>
   <record id="seq_assessment_plan" model="ir.sequence">
     <field name="name">Assessment Plan</field>
     <field name="code">cdt.assessment.plan</field>

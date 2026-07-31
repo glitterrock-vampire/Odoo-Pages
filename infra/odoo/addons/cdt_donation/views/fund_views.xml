@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_donation_fund_list" model="ir.ui.view">
+    <field name="name">donation.fund.list</field>
+    <field name="model">donation.fund</field>
+    <field name="arch" type="xml">
+      <list string="Donation Funds">
+        <field name="name"/>
+        <field name="code"/>
+        <field name="restriction"/>
+        <field name="target_amount" sum="Total Target"/>
+        <field name="pledged_amount" sum="Total Pledged"/>
+        <field name="paid_amount" sum="Total Paid"/>
+        <field name="remaining_amount" sum="Total Remaining"/>
+        <field name="currency_id" column_invisible="True"/>
+        <field name="company_id" groups="base.group_multi_company"/>
+        <field name="active" optional="hide"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_donation_fund_form" model="ir.ui.view">
+    <field name="name">donation.fund.form</field>
+    <field name="model">donation.fund</field>
+    <field name="arch" type="xml">
+      <form string="Donation Fund">
+        <sheet>
+          <div class="oe_title">
+            <label for="name"/>
+            <h1><field name="name" placeholder="Fund name"/></h1>
+          </div>
+          <group>
+            <group>
+              <field name="code"/>
+              <field name="restriction"/>
+              <field name="target_amount"/>
+              <field name="currency_id" groups="base.group_multi_currency"/>
+            </group>
+            <group>
+              <field name="company_id" groups="base.group_multi_company"/>
+              <field name="active"/>
+              <field name="pledged_amount" readonly="True"/>
+              <field name="paid_amount" readonly="True"/>
+              <field name="remaining_amount" readonly="True"/>
+            </group>
+          </group>
+          <group string="Restriction and Purpose">
+            <field name="purpose" placeholder="Describe the approved use of this fund..."/>
+          </group>
+          <notebook>
+            <page string="Donations">
+              <field name="donation_ids" readonly="True">
+                <list>
+                  <field name="name"/>
+                  <field name="partner_id"/>
+                  <field name="donation_date"/>
+                  <field name="designation" optional="show"/>
+                  <field name="amount"/>
+                  <field name="currency_id" column_invisible="True"/>
+                  <field name="state"/>
+                </list>
+              </field>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <record id="view_donation_fund_graph" model="ir.ui.view">
+    <field name="name">donation.fund.graph</field>
+    <field name="model">donation.fund</field>
+    <field name="arch" type="xml">
+      <graph string="Fund Progress" type="bar">
+        <field name="name"/>
+        <field name="target_amount" type="measure"/>
+        <field name="pledged_amount" type="measure"/>
+        <field name="paid_amount" type="measure"/>
+      </graph>
+    </field>
+  </record>
+
+  <record id="view_donation_fund_search" model="ir.ui.view">
+    <field name="name">donation.fund.search</field>
+    <field name="model">donation.fund</field>
+    <field name="arch" type="xml">
+      <search string="Search Donation Funds">
+        <field name="name"/>
+        <field name="code"/>
+        <field name="purpose"/>
+        <filter string="Restricted" name="restricted" domain="[('restriction', 'in', ('temporary', 'permanent'))]"/>
+        <filter string="Unrestricted" name="unrestricted" domain="[('restriction', '=', 'unrestricted')]"/>
+        <separator/>
+        <filter string="Restriction" name="group_by_restriction" context="{'group_by': 'restriction'}"/>
+        <filter string="Company" name="group_by_company" context="{'group_by': 'company_id'}" groups="base.group_multi_company"/>
+      </search>
+    </field>
+  </record>
+
+  <record id="view_donation_fund_pivot" model="ir.ui.view">
+    <field name="name">donation.fund.pivot</field>
+    <field name="model">donation.fund</field>
+    <field name="arch" type="xml">
+      <pivot string="Fund Reporting">
+        <field name="restriction" type="row"/>
+        <field name="target_amount" type="measure"/>
+        <field name="pledged_amount" type="measure"/>
+        <field name="paid_amount" type="measure"/>
+        <field name="remaining_amount" type="measure"/>
+      </pivot>
+    </field>
+  </record>
+
+  <record id="action_donation_funds" model="ir.actions.act_window">
+    <field name="name">Donation Funds</field>
+    <field name="res_model">donation.fund</field>
+    <field name="view_mode">list,form,graph,pivot</field>
+    <field name="search_view_id" ref="view_donation_fund_search"/>
+  </record>
+
+  <menuitem
+    id="menu_donation_funds"
+    name="Funds"
+    parent="menu_cdt_root"
+    action="action_donation_funds"
+    sequence="20"
+  />
+</odoo>

@@ -608,7 +608,19 @@ export const GetFinancialSummaryResponse = zod.object({
   "totalPaid": zod.number(),
   "overdueCount": zod.number(),
   "draftCount": zod.number(),
+  "currency": zod.string(),
+  "funds": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "restriction": zod.enum(['unrestricted', 'temporary', 'permanent']),
+  "purpose": zod.string().nullish(),
+  "targetAmount": zod.number(),
+  "pledgedAmount": zod.number(),
+  "paidAmount": zod.number(),
+  "remainingAmount": zod.number(),
   "currency": zod.string()
+}))
 })
 
 
@@ -620,6 +632,12 @@ export const ListTuitionFeesQueryParams = zod.object({
   "status": zod.union([zod.literal('draft'),zod.literal('due'),zod.literal('partial'),zod.literal('paid'),zod.literal('cancelled'),zod.literal(null)]).nullish()
 })
 
+export const listTuitionFeesResponseDaysOverdueMin = 0;
+
+export const listTuitionFeesResponseReminderCountMin = 0;
+
+
+
 export const ListTuitionFeesResponseItem = zod.object({
   "id": zod.number(),
   "reference": zod.string(),
@@ -627,10 +645,14 @@ export const ListTuitionFeesResponseItem = zod.object({
   "studentName": zod.string(),
   "feeSchedule": zod.string().nullable(),
   "feeStructure": zod.string(),
+  "chargeType": zod.enum(['tuition', 'deposit', 'installment', 'adjustment']),
+  "payerName": zod.string().nullable(),
   "dueDate": zod.coerce.date(),
   "amount": zod.number(),
   "amountPaid": zod.number(),
   "balance": zod.number(),
+  "daysOverdue": zod.number().min(listTuitionFeesResponseDaysOverdueMin),
+  "reminderCount": zod.number().min(listTuitionFeesResponseReminderCountMin),
   "currency": zod.string(),
   "status": zod.enum(['draft', 'due', 'partial', 'paid', 'cancelled']),
   "overdue": zod.boolean(),
@@ -645,6 +667,58 @@ export const ListTuitionFeesResponseItem = zod.object({
   "sampleData": zod.boolean()
 })
 export const ListTuitionFeesResponse = zod.array(ListTuitionFeesResponseItem)
+
+
+/**
+ * Attendance is read-only here; records are created and updated in Odoo Education.
+ * @summary Get student attendance records and summary counts from Odoo
+ */
+export const GetAttendanceQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "status": zod.union([zod.literal('present'),zod.literal('late'),zod.literal('absent'),zod.literal('leave'),zod.literal('excused'),zod.literal(null)]).nullish()
+})
+
+export const getAttendanceResponseRecordsItemMinutesLateMin = 0;
+
+export const getAttendanceResponseRecordsItemEarlyDepartureMinutesMin = 0;
+
+
+
+export const GetAttendanceResponse = zod.object({
+  "generatedAt": zod.string(),
+  "summary": zod.object({
+  "total": zod.number(),
+  "present": zod.number(),
+  "late": zod.number(),
+  "absent": zod.number(),
+  "leave": zod.number(),
+  "excused": zod.number(),
+  "attendanceRate": zod.number().describe('Percentage of matching records marked present or late.'),
+  "todayTotal": zod.number(),
+  "todayPresent": zod.number(),
+  "todayLate": zod.number(),
+  "todayAbsent": zod.number(),
+  "todayRate": zod.number().describe('Percentage of today\'s Jamaica-local records marked present or late.')
+}),
+  "records": zod.array(zod.object({
+  "id": zod.number(),
+  "date": zod.coerce.date(),
+  "studentId": zod.number(),
+  "studentName": zod.string(),
+  "groupId": zod.number(),
+  "groupName": zod.string(),
+  "courseId": zod.number().nullable(),
+  "courseName": zod.string().nullable(),
+  "scheduleId": zod.number().nullable(),
+  "scheduleName": zod.string().nullable(),
+  "status": zod.enum(['present', 'late', 'absent', 'leave', 'excused']),
+  "minutesLate": zod.number().min(getAttendanceResponseRecordsItemMinutesLateMin),
+  "earlyDepartureMinutes": zod.number().min(getAttendanceResponseRecordsItemEarlyDepartureMinutesMin),
+  "checkIn": zod.string().nullable(),
+  "checkOut": zod.string().nullable(),
+  "remarks": zod.string().nullable()
+}))
+})
 
 
 /**

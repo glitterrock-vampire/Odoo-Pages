@@ -38,7 +38,21 @@
           <group string="Student Portal">
             <field name="portal_enabled"/>
             <field name="attendance_by_schedule"/>
+            <field name="attendance_notifications_enabled"/>
             <field name="logo" widget="image" class="oe_avatar"/>
+          </group>
+          <group string="Tuition Reminders">
+            <group>
+              <field name="automatic_fee_reminders_enabled"/>
+              <field name="fee_reminder_template_id" options="{'no_create': True}"/>
+            </group>
+            <group>
+              <field name="fee_reminder_delay_days"/>
+              <field name="fee_reminder_repeat_days"/>
+            </group>
+            <div class="alert alert-info" role="alert" colspan="2">
+              Automatic reminders are disabled by default. When enabled, messages are queued for review and delivery by Odoo's outgoing mail scheduler; they are never force-sent by the tuition workflow.
+            </div>
           </group>
         </sheet>
         <chatter/>

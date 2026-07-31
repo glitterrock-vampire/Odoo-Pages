@@ -23,6 +23,8 @@ tags:
     description: Financial data from Odoo
   - name: tuition
     description: Read-only student fee and tuition balances from Odoo
+  - name: attendance
+    description: Read-only student attendance records and summary from Odoo
   - name: performances
     description: Performance event management
   - name: tasks
@@ -544,6 +546,37 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TuitionFee"
+        "503":
+          description: Odoo integration is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Student attendance (Odoo) ────────────────────────────────────────────
+  /attendance:
+    get:
+      operationId: getAttendance
+      tags: [attendance]
+      summary: Get student attendance records and summary counts from Odoo
+      description: Attendance is read-only here; records are created and updated in Odoo Education.
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: ["string", "null"]
+            enum: [present, late, absent, leave, excused, null]
+      responses:
+        "200":
+          description: Student attendance snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceSnapshot"
         "503":
           description: Odoo integration is not configured
           content:
@@ -1314,6 +1347,11 @@ components:
           type: ["string", "null"]
         feeStructure:
           type: string
+        chargeType:
+          type: string
+          enum: [tuition, deposit, installment, adjustment]
+        payerName:
+          type: ["string", "null"]
         dueDate:
           type: string
           format: date
@@ -1323,6 +1361,12 @@ components:
           type: number
         balance:
           type: number
+        daysOverdue:
+          type: integer
+          minimum: 0
+        reminderCount:
+          type: integer
+          minimum: 0
         currency:
           type: string
         status:
@@ -1361,10 +1405,14 @@ components:
         - studentName
         - feeSchedule
         - feeStructure
+        - chargeType
+        - payerName
         - dueDate
         - amount
         - amountPaid
         - balance
+        - daysOverdue
+        - reminderCount
         - currency
         - status
         - overdue
@@ -1377,6 +1425,92 @@ components:
         - classIds
         - classNames
         - sampleData
+
+    # ── Student attendance ─────────────────────────────────────────────────
+    AttendanceRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        studentId:
+          type: integer
+        studentName:
+          type: string
+        groupId:
+          type: integer
+        groupName:
+          type: string
+        courseId:
+          type: ["integer", "null"]
+        courseName:
+          type: ["string", "null"]
+        scheduleId:
+          type: ["integer", "null"]
+        scheduleName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [present, late, absent, leave, excused]
+        minutesLate:
+          type: integer
+          minimum: 0
+        earlyDepartureMinutes:
+          type: integer
+          minimum: 0
+        checkIn:
+          type: ["string", "null"]
+        checkOut:
+          type: ["string", "null"]
+        remarks:
+          type: ["string", "null"]
+      required: [id, date, studentId, studentName, groupId, groupName, courseId, courseName, scheduleId, scheduleName, status, checkIn, checkOut, minutesLate, earlyDepartureMinutes, remarks]
+
+    AttendanceSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        present:
+          type: integer
+        late:
+          type: integer
+        absent:
+          type: integer
+        leave:
+          type: integer
+        excused:
+          type: integer
+        attendanceRate:
+          type: number
+          description: Percentage of matching records marked present or late.
+        todayTotal:
+          type: integer
+        todayPresent:
+          type: integer
+        todayLate:
+          type: integer
+        todayAbsent:
+          type: integer
+        todayRate:
+          type: number
+          description: Percentage of today's Jamaica-local records marked present or late.
+      required: [total, present, late, absent, leave, excused, attendanceRate, todayTotal, todayPresent, todayLate, todayAbsent, todayRate]
+
+    AttendanceSnapshot:
+      type: object
+      properties:
+        generatedAt:
+          type: string
+        summary:
+          $ref: "#/components/schemas/AttendanceSummary"
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceRecord"
+      required: [generatedAt, summary, records]
 
     # ── Invoice ────────────────────────────────────────────────────────────
     Invoice:
@@ -1423,7 +1557,37 @@ components:
           type: integer
         currency:
           type: string
-      required: [totalRevenue, totalOutstanding, totalPaid, overdueCount, draftCount, currency]
+        funds:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialFundSummary"
+      required: [totalRevenue, totalOutstanding, totalPaid, overdueCount, draftCount, currency, funds]
+
+    FinancialFundSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        restriction:
+          type: string
+          enum: [unrestricted, temporary, permanent]
+        purpose:
+          type: ["string", "null"]
+        targetAmount:
+          type: number
+        pledgedAmount:
+          type: number
+        paidAmount:
+          type: number
+        remainingAmount:
+          type: number
+        currency:
+          type: string
+      required: [id, name, code, restriction, targetAmount, pledgedAmount, paidAmount, remainingAmount, currency]
 
     # ── Website content mirror ────────────────────────────────────────────
     TeamMember:

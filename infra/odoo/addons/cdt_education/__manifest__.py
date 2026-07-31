@@ -1,7 +1,7 @@
 {
     "name": "CDT Education",
     "summary": "School administration and student services for CDT Jamaica",
-    "version": "18.0.1.0.0",
+    "version": "18.0.2.0.0",
     "category": "Education",
     "license": "LGPL-3",
     "depends": [
@@ -17,6 +17,8 @@
         "security/ir.model.access.csv",
         "data/sequences.xml",
         "data/defaults.xml",
+        "data/fee_reminder_data.xml",
+        "data/attendance_cron.xml",
         "views/academic_views.xml",
         "views/people_views.xml",
         "views/admissions_views.xml",
@@ -24,6 +26,7 @@
         "views/attendance_views.xml",
         "views/assessment_views.xml",
         "views/fees_views.xml",
+        "views/portal_service_views.xml",
         "views/education_menus.xml",
         "views/portal_templates.xml",
         "views/admissions_portal_templates.xml",

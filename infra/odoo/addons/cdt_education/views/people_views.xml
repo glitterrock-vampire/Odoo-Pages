@@ -132,7 +132,7 @@
                 </list>
               </field>
             </page>
-            <page string="Fees">
+            <page string="Fees" groups="cdt_education.group_education_finance">
               <field name="fee_ids" readonly="1">
                 <list>
                   <field name="name"/>

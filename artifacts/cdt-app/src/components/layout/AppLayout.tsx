@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useGetDashboardStats } from "@workspace/api-client-react";
-import { LayoutDashboard, Users, CalendarDays, Contact2, HeartHandshake, FileText, CheckSquare, BarChart3, Settings, ShieldCheck, Menu, X, UsersRound, BookOpen, Images, Globe2, Clapperboard, CircleDollarSign, MailCheck } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Contact2, HeartHandshake, FileText, CheckSquare, BarChart3, Settings, ShieldCheck, Menu, X, UsersRound, BookOpen, Images, Globe2, Clapperboard, CircleDollarSign, MailCheck, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigationSections = [
@@ -14,6 +14,7 @@ const navigationSections = [
     items: [
       { name: "Students", href: "/students", icon: Users },
       { name: "Classes", href: "/classes", icon: CalendarDays },
+      { name: "Attendance", href: "/attendance", icon: ClipboardCheck },
     ],
   },
   {

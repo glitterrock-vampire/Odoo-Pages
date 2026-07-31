@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+  <record id="ir_cron_queue_guardian_attendance_notifications" model="ir.cron">
+    <field name="name">CDT: Queue Guardian Attendance Notifications</field>
+    <field name="model_id" ref="model_cdt_student_attendance"/>
+    <field name="state">code</field>
+    <field name="code">model._cron_queue_guardian_notifications()</field>
+    <field name="interval_number">1</field>
+    <field name="interval_type">days</field>
+    <field name="active">True</field>
+  </record>
+</odoo>

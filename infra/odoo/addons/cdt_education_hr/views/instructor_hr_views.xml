@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_instructor_form_hr_attendance" model="ir.ui.view">
+    <field name="name">cdt.instructor.form.hr.attendance</field>
+    <field name="model">cdt.instructor</field>
+    <field name="inherit_id" ref="cdt_education.view_instructor_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='user_id']" position="after">
+        <field name="employee_id"/>
+        <button name="action_open_or_create_employee" type="object" string="Open / Create Employee Attendance Record" class="btn-link"/>
+      </xpath>
+    </field>
+  </record>
+
+  <menuitem
+    id="menu_staff_attendance"
+    name="Staff Attendance"
+    parent="cdt_education.menu_attendance_root"
+    action="hr_attendance.hr_attendance_action"
+    sequence="40"
+    groups="cdt_education.group_education_manager"
+  />
+</odoo>

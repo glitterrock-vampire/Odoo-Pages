@@ -1,5 +1,6 @@
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
+from markupsafe import escape
 
 
 class StudentAdmission(models.Model):
@@ -25,6 +26,10 @@ class StudentAdmission(models.Model):
     introduction = fields.Html()
     published = fields.Boolean(default=False)
     applicant_ids = fields.One2many("cdt.student.applicant", "admission_id")
+    application_count = fields.Integer(compute="_compute_application_counts")
+    admitted_count = fields.Integer(compute="_compute_application_counts")
+    remaining_capacity = fields.Integer(compute="_compute_application_counts")
+    audition_required = fields.Boolean(default=True)
     state = fields.Selection(
         [
             ("draft", "Draft"),
@@ -36,6 +41,19 @@ class StudentAdmission(models.Model):
         required=True,
         tracking=True,
     )
+
+    @api.depends("applicant_ids.state", "capacity")
+    def _compute_application_counts(self):
+        for admission in self:
+            active_applicants = admission.applicant_ids.filtered(
+                lambda applicant: applicant.state not in ("rejected", "withdrawn")
+            )
+            admitted = admission.applicant_ids.filtered(
+                lambda applicant: applicant.state == "admitted"
+            )
+            admission.application_count = len(active_applicants)
+            admission.admitted_count = len(admitted)
+            admission.remaining_capacity = max(admission.capacity - len(admitted), 0)
 
     @api.constrains(
         "application_start",
@@ -102,10 +120,35 @@ class StudentApplicant(models.Model):
     notes = fields.Html()
     document_ids = fields.One2many("cdt.applicant.document", "applicant_id")
     application_fee_paid = fields.Boolean(default=False)
+    consent_given = fields.Boolean(readonly=True)
+    consent_date = fields.Datetime(readonly=True)
+    consent_notice_version = fields.Char(readonly=True)
+    audition_datetime = fields.Datetime(tracking=True)
+    audition_location = fields.Char()
+    audition_reviewer_id = fields.Many2one("res.users")
+    audition_score = fields.Float()
+    audition_notes = fields.Text()
+    audition_result = fields.Selection(
+        [
+            ("pending", "Pending"),
+            ("recommended", "Recommended"),
+            ("review", "Further Review"),
+            ("not_recommended", "Not Recommended"),
+            ("not_required", "Not Required"),
+        ],
+        default="pending",
+        tracking=True,
+    )
+    offer_sent_at = fields.Datetime(readonly=True, copy=False)
+    offer_accepted_at = fields.Datetime(readonly=True, copy=False)
     state = fields.Selection(
         [
             ("applied", "Applied"),
+            ("audition", "Audition"),
             ("approved", "Approved"),
+            ("waitlisted", "Waitlisted"),
+            ("offered", "Offer Sent"),
+            ("offer_accepted", "Offer Accepted"),
             ("rejected", "Rejected"),
             ("admitted", "Admitted"),
             ("withdrawn", "Withdrawn"),
@@ -152,15 +195,53 @@ class StudentApplicant(models.Model):
     def action_approve(self):
         self.write({"state": "approved"})
 
+    def action_schedule_audition(self):
+        self.write({"state": "audition"})
+
+    def action_waitlist(self):
+        self.write({"state": "waitlisted"})
+
+    def action_offer(self):
+        for applicant in self:
+            if applicant.guardian_email:
+                self.env["mail.mail"].create(
+                    {
+                        "subject": f"CDT Jamaica enrollment offer: {applicant.program_id.name}",
+                        "email_to": applicant.guardian_email,
+                        "body_html": (
+                            f"<p>Dear {escape(applicant.guardian_name or 'parent or guardian')},</p>"
+                            f"<p>CDT Jamaica is pleased to offer {escape(applicant.full_name)} "
+                            f"a place in {escape(applicant.program_id.name)}.</p>"
+                            f"<p>Application reference: <strong>{escape(applicant.name)}</strong>.</p>"
+                            "<p>Please contact the admissions team to confirm acceptance and next steps.</p>"
+                        ),
+                        "auto_delete": True,
+                    }
+                )
+            applicant.write(
+                {"state": "offered", "offer_sent_at": fields.Datetime.now()}
+            )
+
+    def action_accept_offer(self):
+        self.write(
+            {"state": "offer_accepted", "offer_accepted_at": fields.Datetime.now()}
+        )
+
     def action_reject(self):
         self.write({"state": "rejected"})
 
     def action_admit(self):
         for applicant in self:
-            if applicant.state not in ("applied", "approved"):
-                raise ValidationError("Only applied or approved applicants can be admitted.")
+            if applicant.state not in ("applied", "approved", "offer_accepted"):
+                raise ValidationError(
+                    "Only applied, approved, or offer-accepted applicants can be admitted."
+                )
             if applicant.student_id:
                 continue
+            if applicant.admission_id.admitted_count >= applicant.admission_id.capacity:
+                raise ValidationError(
+                    "This admission round has reached its enrollment capacity."
+                )
             student = self.env["cdt.student"].create(
                 {
                     "first_name": applicant.first_name,
@@ -176,16 +257,26 @@ class StudentApplicant(models.Model):
                 }
             )
             if applicant.guardian_name:
-                guardian_partner = self.env["res.partner"].create(
-                    {
-                        "name": applicant.guardian_name,
-                        "email": applicant.guardian_email,
-                        "phone": applicant.guardian_phone,
-                    }
+                guardian_partner = self.env["res.partner"]
+                if applicant.guardian_email:
+                    guardian_partner = guardian_partner.search(
+                        [("email", "=ilike", applicant.guardian_email)], limit=1
+                    )
+                if not guardian_partner:
+                    guardian_partner = self.env["res.partner"].create(
+                        {
+                            "name": applicant.guardian_name,
+                            "email": applicant.guardian_email,
+                            "phone": applicant.guardian_phone,
+                        }
+                    )
+                guardian = self.env["cdt.guardian"].search(
+                    [("partner_id", "=", guardian_partner.id)], limit=1
                 )
-                guardian = self.env["cdt.guardian"].create(
-                    {"partner_id": guardian_partner.id}
-                )
+                if not guardian:
+                    guardian = self.env["cdt.guardian"].create(
+                        {"partner_id": guardian_partner.id}
+                    )
                 self.env["cdt.student.guardian"].create(
                     {
                         "student_id": student.id,

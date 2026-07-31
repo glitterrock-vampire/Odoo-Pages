@@ -195,3 +195,141 @@ class TestEducationWorkflow(TransactionCase):
         payment_action = student_fee.action_register_payment()
         self.assertEqual(payment_action["res_model"], "account.payment.register")
         self.assertEqual(payment_action["context"]["active_ids"], student_fee.invoice_id.ids)
+
+    def test_tuition_amount_modes_payer_overdue_and_safe_reminders(self):
+        today = date.today()
+        year = self.env["cdt.academic.year"].create(
+            {
+                "name": "Tuition Workflow Year",
+                "code": "TUITION-WORKFLOW-YEAR",
+                "date_start": today - timedelta(days=60),
+                "date_end": today + timedelta(days=305),
+            }
+        )
+        department = self.env["cdt.education.department"].create(
+            {"name": "Tuition Workflow Arts", "code": "TUITION-WORKFLOW-ARTS"}
+        )
+        program = self.env["cdt.program"].create(
+            {
+                "name": "Tuition Workflow Programme",
+                "code": "TUITION-WORKFLOW-PROGRAMME",
+                "department_id": department.id,
+            }
+        )
+        student_partner = self.env["res.partner"].create(
+            {"name": "Tuition Student", "email": "student.tuition@example.com"}
+        )
+        student = self.env["cdt.student"].create(
+            {
+                "first_name": "Tuition",
+                "last_name": "Student",
+                "partner_id": student_partner.id,
+                "current_program_id": program.id,
+            }
+        )
+        guardian_partner = self.env["res.partner"].create(
+            {"name": "Tuition Guardian", "email": "guardian.tuition@example.com"}
+        )
+        guardian = self.env["cdt.guardian"].create(
+            {"partner_id": guardian_partner.id}
+        )
+        self.env["cdt.student.guardian"].create(
+            {
+                "student_id": student.id,
+                "guardian_id": guardian.id,
+                "relationship": "parent",
+            }
+        )
+        fee_category = self.env["cdt.fee.category"].create(
+            {"name": "Tuition Workflow Charge", "code": "TUITION-WORKFLOW-CHARGE"}
+        )
+        fee_structure = self.env["cdt.fee.structure"].create(
+            {
+                "name": "Tuition Workflow Structure",
+                "program_id": program.id,
+                "academic_year_id": year.id,
+                "line_ids": [
+                    (0, 0, {"category_id": fee_category.id, "amount": 800}),
+                    (0, 0, {"category_id": fee_category.id, "amount": 200}),
+                ],
+            }
+        )
+
+        full_schedule = self.env["cdt.fee.schedule"].create(
+            {
+                "title": "Full Tuition",
+                "fee_structure_id": fee_structure.id,
+                "posting_date": today - timedelta(days=20),
+                "due_date": today - timedelta(days=10),
+                "charge_type": "tuition",
+            }
+        )
+        percentage_schedule = self.env["cdt.fee.schedule"].create(
+            {
+                "title": "Tuition Deposit",
+                "fee_structure_id": fee_structure.id,
+                "posting_date": today - timedelta(days=20),
+                "due_date": today - timedelta(days=10),
+                "charge_type": "deposit",
+                "amount_mode": "percentage",
+                "percentage": 25,
+            }
+        )
+        fixed_schedule = self.env["cdt.fee.schedule"].create(
+            {
+                "title": "Fixed Installment",
+                "fee_structure_id": fee_structure.id,
+                "posting_date": today - timedelta(days=20),
+                "due_date": today - timedelta(days=10),
+                "charge_type": "installment",
+                "amount_mode": "fixed",
+                "fixed_amount": 175,
+                "installment_number": 2,
+            }
+        )
+        self.assertEqual(full_schedule.amount, 1000)
+        self.assertEqual(percentage_schedule.amount, 250)
+        self.assertEqual(fixed_schedule.amount, 175)
+
+        student_fee = self.env["cdt.student.fee"].create(
+            {
+                "student_id": student.id,
+                "fee_schedule_id": fixed_schedule.id,
+                "fee_structure_id": fee_structure.id,
+                "charge_type": fixed_schedule.charge_type,
+                "due_date": fixed_schedule.due_date,
+                "amount": fixed_schedule.amount,
+                "payer_guardian_id": guardian.id,
+            }
+        )
+        self.assertEqual(student_fee.invoice_partner_id, guardian_partner)
+        student_fee.action_create_invoice()
+        self.assertEqual(student_fee.invoice_id.partner_id, guardian_partner)
+        self.assertEqual(student_fee.invoice_id.amount_total, 175)
+        student_fee.action_post_invoice()
+        self.assertTrue(student_fee.is_overdue)
+        self.assertEqual(student_fee.days_overdue, 10)
+
+        institution = self.env.ref("cdt_education.institution_cdt_jamaica")
+        institution.write(
+            {
+                "automatic_fee_reminders_enabled": False,
+                "fee_reminder_delay_days": 0,
+                "fee_reminder_repeat_days": 7,
+            }
+        )
+        action = student_fee.action_schedule_reminder()
+        self.assertEqual(action["tag"], "display_notification")
+        self.assertEqual(student_fee.reminder_count, 1)
+        self.assertEqual(student_fee.reminder_ids.trigger, "manual")
+        self.assertEqual(student_fee.reminder_ids.mail_id.state, "outgoing")
+
+        self.env["cdt.student.fee"]._cron_queue_fee_reminders()
+        self.assertEqual(student_fee.reminder_count, 1)
+
+        institution.automatic_fee_reminders_enabled = True
+        student_fee.next_reminder_date = False
+        self.env["cdt.student.fee"]._cron_queue_fee_reminders()
+        self.assertEqual(student_fee.reminder_count, 2)
+        self.assertIn("automatic", student_fee.reminder_ids.mapped("trigger"))
+        self.assertTrue(all(mail.state == "outgoing" for mail in student_fee.reminder_ids.mail_id))

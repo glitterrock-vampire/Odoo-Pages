@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from markupsafe import escape
+
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
@@ -23,6 +25,7 @@ class StudentAttendance(models.Model):
     status = fields.Selection(
         [
             ("present", "Present"),
+            ("late", "Late"),
             ("absent", "Absent"),
             ("leave", "Leave"),
             ("excused", "Excused"),
@@ -33,6 +36,9 @@ class StudentAttendance(models.Model):
     )
     check_in = fields.Datetime()
     check_out = fields.Datetime()
+    minutes_late = fields.Integer(default=0)
+    early_departure_minutes = fields.Integer(default=0)
+    guardian_notification_queued_at = fields.Datetime(readonly=True, copy=False)
     remarks = fields.Char()
     leave_id = fields.Many2one("cdt.student.leave", ondelete="set null")
 
@@ -61,6 +67,71 @@ class StudentAttendance(models.Model):
                 raise ValidationError(
                     "Attendance on or before the configured freeze date is locked."
                 )
+
+    @api.constrains(
+        "check_in", "check_out", "minutes_late", "early_departure_minutes", "status"
+    )
+    def _check_times(self):
+        for attendance in self:
+            if (
+                attendance.check_in
+                and attendance.check_out
+                and attendance.check_out < attendance.check_in
+            ):
+                raise ValidationError("Check-out cannot be earlier than check-in.")
+            if attendance.minutes_late < 0 or attendance.early_departure_minutes < 0:
+                raise ValidationError("Late and early-departure minutes cannot be negative.")
+            if attendance.status != "late" and attendance.minutes_late:
+                raise ValidationError("Minutes late can only be recorded with Late status.")
+
+    def action_queue_guardian_notification(self):
+        for attendance in self.filtered(
+            lambda item: item.status in ("absent", "late")
+            and not item.guardian_notification_queued_at
+        ):
+            emails = attendance.student_id.guardian_line_ids.filtered(
+                "receives_communications"
+            ).mapped("guardian_id.email")
+            emails = sorted({email.strip() for email in emails if email and email.strip()})
+            if not emails:
+                continue
+            status_label = dict(attendance._fields["status"].selection).get(
+                attendance.status, attendance.status
+            )
+            body = (
+                f"<p>Dear parent or guardian,</p>"
+                f"<p>{escape(attendance.student_id.full_name)} was marked "
+                f"<strong>{escape(status_label)}</strong> for "
+                f"{escape(attendance.student_group_id.name)} on "
+                f"{escape(fields.Date.to_string(attendance.date))}.</p>"
+                "<p>Please contact CDT Jamaica if this record needs clarification.</p>"
+            )
+            self.env["mail.mail"].create(
+                {
+                    "subject": (
+                        f"Attendance update for {attendance.student_id.full_name}"
+                    ),
+                    "body_html": body,
+                    "email_to": ",".join(emails),
+                    "auto_delete": True,
+                }
+            )
+            attendance.guardian_notification_queued_at = fields.Datetime.now()
+
+    @api.model
+    def _cron_queue_guardian_notifications(self):
+        institution = self.env["cdt.education.institution"].search([], limit=1)
+        if not institution or not institution.attendance_notifications_enabled:
+            return
+        records = self.search(
+            [
+                ("status", "in", ("absent", "late")),
+                ("date", "<=", fields.Date.today()),
+                ("guardian_notification_queued_at", "=", False),
+            ],
+            limit=500,
+        )
+        records.action_queue_guardian_notification()
 
 
 class StudentLeave(models.Model):
@@ -185,6 +256,7 @@ class AttendanceBulkWizard(models.TransientModel):
     default_status = fields.Selection(
         [
             ("present", "Present"),
+            ("late", "Late"),
             ("absent", "Absent"),
             ("leave", "Leave"),
             ("excused", "Excused"),

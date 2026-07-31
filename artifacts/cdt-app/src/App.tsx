@@ -20,6 +20,7 @@ import Media from './pages/Media';
 import WebsiteSettings from './pages/WebsiteSettings';
 import Tuition from './pages/Tuition';
 import Engagement from './pages/Engagement';
+import Attendance from './pages/Attendance';
 import NotFound from './pages/not-found';
 import { PreferencesProvider, getStoredPreferences, usePreferences } from './lib/preferences';
 
@@ -40,6 +41,7 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/students" component={Students} />
         <Route path="/classes" component={Classes} />
+        <Route path="/attendance" component={Attendance} />
         <Route path="/contacts" component={Contacts} />
         <Route path="/donations" component={Donations} />
         <Route path="/finances" component={Finances} />

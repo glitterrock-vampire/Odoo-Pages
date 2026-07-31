@@ -18,6 +18,9 @@
         <field name="amount"/>
         <field name="currency_id" column_invisible="True"/>
         <field name="campaign_id"/>
+        <field name="fund_id" optional="show"/>
+        <field name="designation" optional="hide"/>
+        <field name="company_id" groups="base.group_multi_company" optional="hide"/>
         <field name="state"/>
       </list>
     </field>
@@ -36,7 +39,13 @@
             <field name="amount"/>
             <field name="currency_id" groups="base.group_multi_currency"/>
             <field name="campaign_id"/>
+            <field name="fund_id" options="{'no_create_edit': True}"/>
+            <field name="company_id" groups="base.group_multi_company"/>
             <field name="state"/>
+          </group>
+          <group string="Donor Designation">
+            <field name="designation"/>
+            <field name="purpose" placeholder="Record any specific purpose communicated by the donor..."/>
           </group>
         </sheet>
       </form>
@@ -49,6 +58,58 @@
     <field name="view_mode">list,form</field>
   </record>
 
+  <record id="view_donation_search" model="ir.ui.view">
+    <field name="name">donation.donation.search</field>
+    <field name="model">donation.donation</field>
+    <field name="arch" type="xml">
+      <search string="Search Donations">
+        <field name="name"/>
+        <field name="partner_id"/>
+        <field name="fund_id"/>
+        <field name="campaign_id"/>
+        <filter string="Confirmed" name="confirmed" domain="[('state', '=', 'confirmed')]"/>
+        <filter string="Paid" name="paid" domain="[('state', '=', 'paid')]"/>
+        <separator/>
+        <filter string="Fund" name="group_by_fund" context="{'group_by': 'fund_id'}"/>
+        <filter string="State" name="group_by_state" context="{'group_by': 'state'}"/>
+        <filter string="Donation Date" name="group_by_date" context="{'group_by': 'donation_date'}"/>
+      </search>
+    </field>
+  </record>
+
+  <record id="view_donation_graph" model="ir.ui.view">
+    <field name="name">donation.donation.graph</field>
+    <field name="model">donation.donation</field>
+    <field name="arch" type="xml">
+      <graph string="Donations by Fund" type="bar">
+        <field name="fund_id"/>
+        <field name="currency_id"/>
+        <field name="amount" type="measure"/>
+      </graph>
+    </field>
+  </record>
+
+  <record id="view_donation_pivot" model="ir.ui.view">
+    <field name="name">donation.donation.pivot</field>
+    <field name="model">donation.donation</field>
+    <field name="arch" type="xml">
+      <pivot string="Donation Reporting">
+        <field name="fund_id" type="row"/>
+        <field name="currency_id" type="row"/>
+        <field name="state" type="col"/>
+        <field name="amount" type="measure"/>
+      </pivot>
+    </field>
+  </record>
+
+  <record id="action_donation_reporting" model="ir.actions.act_window">
+    <field name="name">Donation Reporting</field>
+    <field name="res_model">donation.donation</field>
+    <field name="view_mode">pivot,graph,list</field>
+    <field name="search_view_id" ref="view_donation_search"/>
+    <field name="context">{'search_default_group_by_fund': 1}</field>
+  </record>
+
   <menuitem id="menu_cdt_root" name="CDT Jamaica" sequence="30"/>
   <menuitem
     id="menu_donations"
@@ -56,5 +117,12 @@
     parent="menu_cdt_root"
     action="action_donations"
     sequence="10"
+  />
+  <menuitem
+    id="menu_donation_reporting"
+    name="Reporting"
+    parent="menu_cdt_root"
+    action="action_donation_reporting"
+    sequence="30"
   />
 </odoo>

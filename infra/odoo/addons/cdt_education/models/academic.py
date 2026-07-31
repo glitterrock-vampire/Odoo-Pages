@@ -28,6 +28,32 @@ class EducationInstitution(models.Model):
     logo = fields.Image(max_width=512, max_height=512)
     portal_enabled = fields.Boolean(default=True)
     attendance_by_schedule = fields.Boolean(default=True)
+    attendance_notifications_enabled = fields.Boolean(
+        default=False,
+        help="Queue parent/guardian email notifications for absent or late students.",
+    )
+    automatic_fee_reminders_enabled = fields.Boolean(
+        string="Automatic Fee Reminders",
+        default=False,
+        help="Queue overdue tuition reminders during the daily scheduler. "
+        "Messages are added to Odoo's outgoing mail queue and are never force-sent.",
+    )
+    fee_reminder_delay_days = fields.Integer(
+        string="First Reminder After",
+        default=7,
+        help="Number of days after the due date before the first automatic reminder is queued.",
+    )
+    fee_reminder_repeat_days = fields.Integer(
+        string="Repeat Reminder Every",
+        default=7,
+        help="Minimum number of days between automatic reminders for the same fee.",
+    )
+    fee_reminder_template_id = fields.Many2one(
+        "mail.template",
+        string="Fee Reminder Template",
+        domain=[("model", "=", "cdt.student.fee")],
+        help="Optional custom template. The standard CDT tuition reminder is used when empty.",
+    )
     active = fields.Boolean(default=True)
 
     _sql_constraints = [
@@ -46,6 +72,14 @@ class EducationInstitution(models.Model):
                 raise ValidationError(
                     "The current academic term must belong to the current academic year."
                 )
+
+    @api.constrains("fee_reminder_delay_days", "fee_reminder_repeat_days")
+    def _check_fee_reminder_days(self):
+        for institution in self:
+            if institution.fee_reminder_delay_days < 0:
+                raise ValidationError("The first reminder delay cannot be negative.")
+            if institution.fee_reminder_repeat_days < 1:
+                raise ValidationError("Reminder repetition must be at least one day.")
 
 
 class AcademicYear(models.Model):

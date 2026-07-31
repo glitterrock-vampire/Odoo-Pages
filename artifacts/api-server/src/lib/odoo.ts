@@ -372,6 +372,10 @@ interface AdmissionSummary {
   application_end: string;
   capacity: number;
   application_fee: number;
+  application_count: number;
+  admitted_count: number;
+  remaining_capacity: number;
+  audition_required: boolean;
   state: string;
   applicant_ids: number[];
 }
@@ -439,6 +443,7 @@ export async function getOdooSchoolEngagementSnapshot() {
       fields: [
         "id", "name", "program_id", "academic_year_id", "application_start",
         "application_end", "capacity", "application_fee", "state", "applicant_ids",
+        "application_count", "admitted_count", "remaining_capacity", "audition_required",
       ],
       order: "application_end asc, id asc",
       limit: 50,
@@ -539,7 +544,10 @@ export async function getOdooSchoolEngagementSnapshot() {
       applicationEnd: item.application_end,
       capacity: item.capacity,
       applicationFee: item.application_fee,
-      applications: item.applicant_ids.length,
+      applications: item.application_count,
+      admitted: item.admitted_count,
+      remainingCapacity: item.remaining_capacity,
+      auditionRequired: item.audition_required,
       state: item.state,
     })),
     applicants: applicants.map((item) => ({
@@ -611,11 +619,15 @@ export interface OdooStudentFee {
   student_id: Many2One;
   fee_schedule_id: Many2One;
   fee_structure_id: Many2One;
+  charge_type: "tuition" | "deposit" | "installment" | "adjustment";
+  invoice_partner_id: Many2One;
   due_date: string;
   amount: number;
   currency_id: Many2One;
   amount_paid: number;
   balance: number;
+  days_overdue: number;
+  reminder_count: number;
   invoice_id: Many2One;
   invoice_state: string | false;
   payment_state: string | false;
@@ -628,11 +640,15 @@ const STUDENT_FEE_FIELDS = [
   "student_id",
   "fee_schedule_id",
   "fee_structure_id",
+  "charge_type",
+  "invoice_partner_id",
   "due_date",
   "amount",
   "currency_id",
   "amount_paid",
   "balance",
+  "days_overdue",
+  "reminder_count",
   "invoice_id",
   "invoice_state",
   "payment_state",
@@ -654,6 +670,68 @@ export function listOdooStudentFees(
     limit,
     order: "due_date desc, id desc",
   });
+}
+
+export type OdooAttendanceStatus = "present" | "late" | "absent" | "leave" | "excused";
+
+export interface OdooStudentAttendance {
+  id: number;
+  date: string;
+  student_id: Many2One;
+  student_group_id: Many2One;
+  course_id: Many2One;
+  schedule_id: Many2One;
+  status: OdooAttendanceStatus;
+  check_in: string | false;
+  check_out: string | false;
+  minutes_late?: number;
+  early_departure_minutes?: number;
+  remarks: string | false;
+}
+
+let attendanceMinuteFieldsSupported: boolean | null = null;
+
+export async function listOdooStudentAttendance(
+  search = "",
+  limit = 1000,
+): Promise<OdooStudentAttendance[]> {
+  const domain: unknown[] = [];
+  if (search) {
+    domain.push(
+      "|", "|", "|",
+      ["student_id.full_name", "ilike", search],
+      ["student_group_id.name", "ilike", search],
+      ["course_id.name", "ilike", search],
+      ["remarks", "ilike", search],
+    );
+  }
+  const baseFields = [
+    "id", "date", "student_id", "student_group_id", "course_id",
+    "schedule_id", "status", "check_in", "check_out", "remarks",
+  ];
+  const read = (fields: string[]) => callOdoo<OdooStudentAttendance[]>(
+    "cdt.student.attendance",
+    "search_read",
+    [domain],
+    { fields, limit, order: "date desc, id desc" },
+  );
+
+  if (attendanceMinuteFieldsSupported === null) {
+    const definitions = await callOdoo<Record<string, { type?: string }>>(
+      "cdt.student.attendance",
+      "fields_get",
+      [["minutes_late", "early_departure_minutes"]],
+      { attributes: ["type"] },
+    );
+    attendanceMinuteFieldsSupported = Boolean(
+      definitions.minutes_late && definitions.early_departure_minutes,
+    );
+  }
+
+  const fields = attendanceMinuteFieldsSupported
+    ? [...baseFields, "minutes_late", "early_departure_minutes"]
+    : baseFields;
+  return read(fields);
 }
 
 interface OdooEducationStudentRecord {
@@ -918,7 +996,39 @@ export async function listOdooEducationClasses(
 }
 
 export async function getOdooFinancialSummary() {
-  const invoices = await listOdooInvoices("", undefined, 1000);
+  interface OdooDonationFundSummary {
+    id: number;
+    name: string;
+    code: string;
+    restriction: "unrestricted" | "temporary" | "permanent";
+    purpose: string | false;
+    target_amount: number;
+    pledged_amount: number;
+    paid_amount: number;
+    remaining_amount: number;
+    currency_id: Many2One;
+  }
+  const [invoices, funds] = await Promise.all([
+    listOdooInvoices("", undefined, 1000),
+    callOdoo<OdooDonationFundSummary[]>("donation.fund", "search_read", [[
+      ["active", "=", true],
+    ]], {
+      fields: [
+        "id",
+        "name",
+        "code",
+        "restriction",
+        "purpose",
+        "target_amount",
+        "pledged_amount",
+        "paid_amount",
+        "remaining_amount",
+        "currency_id",
+      ],
+      limit: 100,
+      order: "restriction desc, name asc",
+    }),
+  ]);
   const posted = invoices.filter((invoice) => invoice.state === "posted");
   const today = new Date().toISOString().split("T")[0];
   return {
@@ -928,6 +1038,18 @@ export async function getOdooFinancialSummary() {
     overdueCount: posted.filter((invoice) => invoice.amount_residual > 0 && invoice.invoice_date_due && invoice.invoice_date_due < today).length,
     draftCount: invoices.filter((invoice) => invoice.state === "draft").length,
     currency: posted[0]?.currency_id ? posted[0].currency_id[1] : "JMD",
+    funds: funds.map((fund) => ({
+      id: fund.id,
+      name: fund.name,
+      code: fund.code,
+      restriction: fund.restriction,
+      purpose: fund.purpose || null,
+      targetAmount: fund.target_amount,
+      pledgedAmount: fund.pledged_amount,
+      paidAmount: fund.paid_amount,
+      remainingAmount: fund.remaining_amount,
+      currency: fund.currency_id ? fund.currency_id[1] : "JMD",
+    })),
   };
 }
 

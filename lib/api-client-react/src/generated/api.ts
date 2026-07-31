@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AttendanceSnapshot,
   ClassInput,
   ClassUpdate,
   Contact,
@@ -32,6 +33,7 @@ import type {
   EnrollmentStat,
   ErrorResponse,
   FinancialSummary,
+  GetAttendanceParams,
   GetFinanceReportParams,
   HealthStatus,
   Invoice,
@@ -1775,6 +1777,91 @@ export function useListTuitionFees<TData = Awaited<ReturnType<typeof listTuition
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListTuitionFeesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAttendanceUrl = (params?: GetAttendanceParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/attendance?${stringifiedParams}` : `/api/attendance`
+}
+
+/**
+ * Attendance is read-only here; records are created and updated in Odoo Education.
+ * @summary Get student attendance records and summary counts from Odoo
+ */
+export const getAttendance = async (params?: GetAttendanceParams, options?: RequestInit): Promise<AttendanceSnapshot> => {
+
+  return customFetch<AttendanceSnapshot>(getGetAttendanceUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAttendanceQueryKey = (params?: GetAttendanceParams,) => {
+    return [
+    `/api/attendance`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAttendanceQueryOptions = <TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<ErrorResponse>>(params?: GetAttendanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAttendanceQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAttendance>>> = ({ signal }) => getAttendance(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAttendanceQueryResult = NonNullable<Awaited<ReturnType<typeof getAttendance>>>
+export type GetAttendanceQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get student attendance records and summary counts from Odoo
+ */
+
+export function useGetAttendance<TData = Awaited<ReturnType<typeof getAttendance>>, TError = ErrorType<ErrorResponse>>(
+ params?: GetAttendanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAttendance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAttendanceQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

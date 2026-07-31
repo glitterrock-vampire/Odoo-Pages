@@ -77,6 +77,9 @@ interface EngagementSnapshot {
     capacity: number;
     applicationFee: number;
     applications: number;
+    admitted: number;
+    remainingCapacity: number;
+    auditionRequired: boolean;
     state: string;
   }>;
   applicants: Array<{
@@ -317,7 +320,7 @@ export default function Engagement() {
             <div key={admission.id} className="border-b px-5 py-5">
               <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-primary">{admission.name}</p><p className="mt-1 text-sm text-muted-foreground">{admission.program} · closes {formatDate(admission.applicationEnd)}</p></div><Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-800">Applications open</Badge></div>
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label={`${admission.applications} of ${admission.capacity} applications`} aria-valuemin={0} aria-valuemax={admission.capacity} aria-valuenow={admission.applications}><div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, admission.applications / admission.capacity * 100)}%` }} /></div>
-              <p className="mt-2 text-xs text-muted-foreground">{admission.applications} applications · {admission.capacity} available places</p>
+              <p className="mt-2 text-xs text-muted-foreground">{admission.applications} applications · {admission.admitted} admitted · {admission.remainingCapacity} of {admission.capacity} places remaining{admission.auditionRequired ? " · audition required" : ""}</p>
             </div>
           ))}
           <div className="divide-y">

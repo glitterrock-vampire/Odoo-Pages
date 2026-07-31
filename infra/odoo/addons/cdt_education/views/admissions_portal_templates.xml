@@ -56,6 +56,8 @@
                 <dl class="row small mb-4">
                   <dt class="col-6">Closing date</dt><dd class="col-6 text-end"><span t-field="admission.application_end"/></dd>
                   <dt class="col-6">Age range</dt><dd class="col-6 text-end"><span t-field="admission.minimum_age"/>–<span t-field="admission.maximum_age"/></dd>
+                  <dt class="col-6">Places remaining</dt><dd class="col-6 text-end"><span t-field="admission.remaining_capacity"/> of <span t-field="admission.capacity"/></dd>
+                  <dt class="col-6">Audition</dt><dd class="col-6 text-end"><t t-if="admission.audition_required">Required after review</t><t t-else="">Not required</t></dd>
                   <dt class="col-6">Application fee</dt><dd class="col-6 text-end"><span t-field="admission.application_fee" t-options="{'widget': 'monetary', 'display_currency': admission.currency_id}"/></dd>
                 </dl>
                 <a t-att-href="'/apply/%s' % admission.id" class="btn btn-primary w-100">Start application</a>

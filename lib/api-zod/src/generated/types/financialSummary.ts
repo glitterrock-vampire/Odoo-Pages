@@ -5,6 +5,7 @@
  * CDT Jamaica Management API with Odoo Community integration
  * OpenAPI spec version: 0.1.0
  */
+import type { FinancialFundSummary } from './financialFundSummary';
 
 export interface FinancialSummary {
   totalRevenue: number;
@@ -13,4 +14,5 @@ export interface FinancialSummary {
   overdueCount: number;
   draftCount: number;
   currency: string;
+  funds: FinancialFundSummary[];
 }
