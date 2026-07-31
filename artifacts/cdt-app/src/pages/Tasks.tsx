@@ -8,13 +8,14 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 export default function Tasks() {
-  const { data: tasks, isLoading } = useListTasks();
+  const { data: tasksResponse, isLoading, isError } = useListTasks();
+  const tasks = Array.isArray(tasksResponse) ? tasksResponse : [];
   const deleteTask = useDeleteTask();
   const createTask = useCreateTask();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     if (confirm("Delete this task?")) {
       deleteTask.mutate({ id }, {
         onSuccess: () => {
@@ -55,27 +56,29 @@ export default function Tasks() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold text-primary font-display">Tasks</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Tasks</h1>
           <p className="text-muted-foreground mt-1">Manage school operations and assignments.</p>
         </div>
-        <Button className="gap-2 rounded-full font-bold shadow-md bg-secondary text-secondary-foreground hover:bg-secondary/90" onClick={handleAdd}>
+        <Button className="gap-2" onClick={handleAdd}>
           <Plus className="w-4 h-4" /> New Task
         </Button>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center py-20"><div className="animate-pulse font-medium text-muted-foreground">Loading tasks...</div></div>
+      ) : isError ? (
+        <div className="border border-amber-300/70 bg-amber-50 p-5 text-sm text-amber-950">Odoo tasks could not be loaded. Check the integration settings.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
           {stages.map(stage => {
-            const stageTasks = tasks?.filter(t => t.stage === stage) || [];
+            const stageTasks = tasks.filter(t => t.stage === stage);
             
             return (
-              <div key={stage} className="bg-muted/40 rounded-3xl p-4 min-h-[500px] border border-border/50">
+              <div key={stage} className="min-h-[500px] border bg-muted/35 p-4">
                 <div className="flex items-center justify-between mb-4 px-2">
                   <h3 className="font-bold text-lg capitalize flex items-center gap-2 text-primary font-display">
                     {stage.replace('_', ' ')}
-                    <Badge variant="secondary" className="rounded-full bg-background border shadow-sm px-2">
+                    <Badge variant="secondary" className="border bg-background px-2">
                       {stageTasks.length}
                     </Badge>
                   </h3>
@@ -83,7 +86,7 @@ export default function Tasks() {
                 
                 <div className="space-y-4">
                   {stageTasks.map(task => (
-                    <Card key={task.id} className="border-none shadow-sm hover:shadow-md transition-all group cursor-pointer bg-card rounded-2xl">
+                    <Card key={task.id} className="group cursor-pointer transition-colors hover:border-primary/30">
                       <CardContent className="p-4 space-y-3">
                         <div className="flex items-start justify-between gap-2">
                           <h4 className="font-bold text-primary leading-tight">{task.title}</h4>
@@ -108,11 +111,11 @@ export default function Tasks() {
                             )}
                           </div>
                           
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-secondary hover:bg-secondary/10" onClick={(e) => { e.stopPropagation(); toast({ title: "Edit coming soon" }); }}>
+                          <div className="flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+                            <Button aria-label={`Edit ${task.title}`} variant="ghost" size="icon" className="text-primary hover:bg-secondary/60" onClick={(e) => { e.stopPropagation(); toast({ title: "Edit coming soon" }); }}>
                               <Edit2 className="w-3.5 h-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); handleDelete(task.id); }}>
+                            <Button aria-label={`Delete ${task.title}`} variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); handleDelete(task.id); }}>
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </div>
@@ -121,7 +124,7 @@ export default function Tasks() {
                     </Card>
                   ))}
                   {stageTasks.length === 0 && (
-                    <div className="text-center py-12 text-muted-foreground/50 text-sm font-medium border-2 border-dashed border-muted-foreground/10 rounded-2xl bg-background/50">
+                    <div className="border border-dashed bg-background/50 py-12 text-center text-sm font-medium text-muted-foreground/60">
                       No tasks in this stage
                     </div>
                   )}

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_fee_category_list" model="ir.ui.view">
+    <field name="name">cdt.fee.category.list</field><field name="model">cdt.fee.category</field>
+    <field name="arch" type="xml"><list><field name="code"/><field name="name"/><field name="product_id"/><field name="income_account_id"/><field name="active"/></list></field>
+  </record>
+  <record id="view_fee_category_form" model="ir.ui.view">
+    <field name="name">cdt.fee.category.form</field><field name="model">cdt.fee.category</field>
+    <field name="arch" type="xml"><form><sheet><div class="oe_title"><h1><field name="name"/></h1></div><group><group><field name="code"/><field name="active"/></group><group><field name="product_id"/><field name="income_account_id"/></group></group><field name="description"/></sheet></form></field>
+  </record>
+  <record id="action_fee_category" model="ir.actions.act_window">
+    <field name="name">Fee Categories</field><field name="res_model">cdt.fee.category</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_fee_structure_list" model="ir.ui.view">
+    <field name="name">cdt.fee.structure.list</field><field name="model">cdt.fee.structure</field>
+    <field name="arch" type="xml"><list><field name="name"/><field name="program_id"/><field name="academic_year_id"/><field name="academic_term_id"/><field name="student_category_id"/><field name="total_amount"/><field name="currency_id" column_invisible="True"/><field name="active"/></list></field>
+  </record>
+  <record id="view_fee_structure_form" model="ir.ui.view">
+    <field name="name">cdt.fee.structure.form</field><field name="model">cdt.fee.structure</field>
+    <field name="arch" type="xml"><form><sheet><div class="oe_title"><h1><field name="name"/></h1></div><group><group><field name="program_id"/><field name="academic_year_id"/><field name="academic_term_id" domain="[('academic_year_id', '=', academic_year_id)]"/><field name="student_category_id"/></group><group><field name="company_id"/><field name="currency_id"/><field name="total_amount" readonly="1"/><field name="active"/></group></group><notebook><page string="Fee Components"><field name="line_ids"><list editable="bottom"><field name="sequence" widget="handle"/><field name="category_id"/><field name="description"/><field name="amount"/><field name="discount_percent"/><field name="net_amount" readonly="1"/><field name="currency_id" column_invisible="True"/></list></field></page></notebook></sheet><chatter/></form></field>
+  </record>
+  <record id="action_fee_structure" model="ir.actions.act_window">
+    <field name="name">Fee Structures</field><field name="res_model">cdt.fee.structure</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_fee_schedule_list" model="ir.ui.view">
+    <field name="name">cdt.fee.schedule.list</field><field name="model">cdt.fee.schedule</field>
+    <field name="arch" type="xml"><list decoration-success="state == 'generated'" decoration-muted="state in ('closed', 'cancelled')"><field name="name"/><field name="title"/><field name="program_id"/><field name="academic_year_id"/><field name="academic_term_id"/><field name="student_group_id"/><field name="due_date"/><field name="amount"/><field name="generated_count"/><field name="state" widget="badge"/></list></field>
+  </record>
+  <record id="view_fee_schedule_form" model="ir.ui.view">
+    <field name="name">cdt.fee.schedule.form</field><field name="model">cdt.fee.schedule</field>
+    <field name="arch" type="xml"><form><header><button name="action_generate_fees" type="object" string="Generate Student Fees" class="btn-primary" invisible="state not in ('draft', 'generated')"/><field name="state" widget="statusbar" statusbar_visible="draft,generated,closed"/></header><sheet><div class="oe_title"><label for="name"/><h1><field name="name" readonly="1"/></h1><h2><field name="title"/></h2></div><group><group><field name="fee_structure_id"/><field name="program_id" readonly="1"/><field name="academic_year_id" readonly="1"/><field name="academic_term_id" readonly="1"/><field name="student_group_id"/></group><group><field name="posting_date"/><field name="due_date"/><field name="installment_number"/><field name="amount" readonly="1"/><field name="currency_id" invisible="1"/><field name="generated_count" readonly="1"/></group></group><notebook><page string="Student Fees"><field name="student_fee_ids" readonly="1"><list><field name="name"/><field name="student_id"/><field name="due_date"/><field name="amount"/><field name="amount_paid"/><field name="balance"/><field name="state" widget="badge"/><field name="invoice_id"/></list></field></page></notebook></sheet><chatter/></form></field>
+  </record>
+  <record id="action_fee_schedule" model="ir.actions.act_window">
+    <field name="name">Fee Schedules</field><field name="res_model">cdt.fee.schedule</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_student_fee_list" model="ir.ui.view">
+    <field name="name">cdt.student.fee.list</field><field name="model">cdt.student.fee</field>
+    <field name="arch" type="xml"><list decoration-success="state == 'paid'" decoration-danger="state == 'due'" decoration-warning="state == 'partial'" decoration-muted="state == 'cancelled'"><field name="name"/><field name="student_id"/><field name="fee_schedule_id"/><field name="due_date"/><field name="amount"/><field name="currency_id" column_invisible="True"/><field name="amount_paid"/><field name="balance"/><field name="invoice_id"/><field name="payment_state" widget="badge"/><field name="state" widget="badge"/></list></field>
+  </record>
+  <record id="view_student_fee_form" model="ir.ui.view">
+    <field name="name">cdt.student.fee.form</field><field name="model">cdt.student.fee</field>
+    <field name="arch" type="xml"><form><header><button name="action_create_invoice" type="object" string="Create Odoo Invoice" class="btn-primary" invisible="invoice_id"/><button name="action_post_invoice" type="object" string="Post Invoice" class="btn-primary" invisible="not invoice_id or invoice_state != 'draft'"/><button name="action_register_payment" type="object" string="Register Payment" class="btn-primary" invisible="not invoice_id or invoice_state != 'posted' or payment_state == 'paid'"/><button name="action_view_invoice" type="object" string="View Invoice" invisible="not invoice_id"/><field name="state" widget="statusbar" statusbar_visible="draft,due,partial,paid"/></header><sheet><div class="oe_title"><label for="name"/><h1><field name="name" readonly="1"/></h1></div><group><group><field name="student_id"/><field name="program_enrollment_id"/><field name="fee_schedule_id"/><field name="fee_structure_id"/></group><group><field name="due_date"/><field name="amount"/><field name="currency_id"/><field name="amount_paid" readonly="1"/><field name="balance" readonly="1"/></group></group><group string="Accounting"><field name="invoice_id" readonly="1"/><field name="invoice_state" readonly="1"/><field name="payment_state" readonly="1"/></group></sheet><chatter/></form></field>
+  </record>
+  <record id="view_student_fee_pivot" model="ir.ui.view">
+    <field name="name">cdt.student.fee.pivot</field><field name="model">cdt.student.fee</field>
+    <field name="arch" type="xml"><pivot string="Fee Collection"><field name="fee_structure_id" type="row"/><field name="student_id" type="row"/><field name="due_date" interval="month" type="col"/><field name="amount" type="measure"/><field name="amount_paid" type="measure"/><field name="balance" type="measure"/></pivot></field>
+  </record>
+  <record id="view_student_fee_graph" model="ir.ui.view">
+    <field name="name">cdt.student.fee.graph</field><field name="model">cdt.student.fee</field>
+    <field name="arch" type="xml"><graph string="Fee Collection" type="bar"><field name="due_date" interval="month"/><field name="amount" type="measure"/><field name="amount_paid" type="measure"/><field name="balance" type="measure"/></graph></field>
+  </record>
+  <record id="action_student_fee" model="ir.actions.act_window">
+    <field name="name">Student Fees</field><field name="res_model">cdt.student.fee</field><field name="view_mode">list,form,pivot,graph</field>
+  </record>
+  <record id="action_fee_collection_report" model="ir.actions.act_window">
+    <field name="name">Fee Collection Report</field><field name="res_model">cdt.student.fee</field><field name="view_mode">pivot,graph,list</field>
+  </record>
+</odoo>

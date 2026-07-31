@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Trash2, Edit2, Calendar as CalIcon, MapPin, Ticket } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
+import { ContentSourceBanner } from "@/components/content/ContentSourceBanner";
 
 export default function Performances() {
   const [search, setSearch] = useState("");
@@ -18,6 +19,11 @@ export default function Performances() {
   const { toast } = useToast();
 
   const handleDelete = (id: number) => {
+    const performance = performances?.find((item) => item.id === id);
+    if (performance?.managedBySanity) {
+      toast({ title: "Managed by Sanity", description: "Delete this public performance in Sanity until the website cutover is complete." });
+      return;
+    }
     if (confirm("Are you sure you want to delete this performance?")) {
       deletePerformance.mutate({ id }, {
         onSuccess: () => {
@@ -41,19 +47,21 @@ export default function Performances() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold text-primary font-display">Performances</h1>
-          <p className="text-muted-foreground mt-1">Manage upcoming shows, venues, and ticketing.</p>
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Performances</h1>
+          <p className="text-muted-foreground mt-1">Published shows mirrored into Odoo, with ERP ticketing and class details.</p>
         </div>
-        <Button className="gap-2 rounded-full font-bold shadow-md"><Plus className="w-4 h-4" /> Add Performance</Button>
+        <Button className="gap-2" disabled title="Create website performances in Sanity until cutover"><Plus className="w-4 h-4" /> Add after cutover</Button>
       </div>
 
-      <Card className="shadow-xl border-none rounded-2xl overflow-hidden bg-card">
+      <ContentSourceBanner />
+
+      <Card className="overflow-hidden">
         <div className="p-4 border-b border-border bg-muted/10">
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Search performances..." 
-              className="pl-9 rounded-xl bg-background border-muted shadow-sm focus-visible:ring-primary"
+              className="pl-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -80,6 +88,7 @@ export default function Performances() {
                   <TableRow key={perf.id} className="group transition-colors hover:bg-muted/20">
                     <TableCell>
                       <div className="font-bold text-primary text-base">{perf.title}</div>
+                      {perf.managedBySanity && <Badge variant="outline" className="mt-1 text-[10px] uppercase tracking-wide">Sanity managed</Badge>}
                       {perf.ticketPrice && (
                         <div className="flex items-center gap-1 text-xs font-semibold text-secondary mt-1">
                           <Ticket className="w-3 h-3" />
@@ -90,7 +99,7 @@ export default function Performances() {
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm font-medium">
                         <CalIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span>{format(new Date(perf.date), "MMM d, yyyy")}</span>
+                        <span>{format(parseISO(perf.date), "MMM d, yyyy")}</span>
                       </div>
                       {perf.time && <div className="text-xs text-muted-foreground mt-0.5 ml-5">{perf.time}</div>}
                     </TableCell>
@@ -106,11 +115,11 @@ export default function Performances() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-secondary hover:bg-secondary/10">
+                      <div className="flex justify-end gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+                        <Button aria-label={`Edit ${perf.title}`} variant="ghost" size="icon" className="text-primary hover:bg-secondary/60" disabled={perf.managedBySanity} title={perf.managedBySanity ? "Public fields are managed in Sanity" : "Edit performance"}>
                           <Edit2 className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(perf.id)}>
+                        <Button aria-label={`Delete ${perf.title}`} variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" disabled={perf.managedBySanity} title={perf.managedBySanity ? "Delete in Sanity until cutover" : "Delete performance"} onClick={() => handleDelete(perf.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>

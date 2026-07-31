@@ -1,6 +1,13 @@
 import { Router, type IRouter } from "express";
-import { eq, ilike, gte, and } from "drizzle-orm";
-import { db, performancesTable, performanceClassesTable } from "@workspace/db";
+import {
+  createOdooPerformance,
+  deleteOdooPerformance,
+  getOdooPerformance,
+  isOdooConfigured,
+  listOdooPerformances,
+  updateOdooPerformance,
+  type OdooPerformance,
+} from "../lib/odoo";
 import {
   CreatePerformanceBody,
   UpdatePerformanceBody,
@@ -9,127 +16,109 @@ import {
 
 const router: IRouter = Router();
 
-async function getParticipatingClassIds(performanceId: number): Promise<number[]> {
-  const rows = await db
-    .select({ classId: performanceClassesTable.classId })
-    .from(performanceClassesTable)
-    .where(eq(performanceClassesTable.performanceId, performanceId));
-  return rows.map((r) => r.classId);
-}
-
-async function setParticipatingClasses(performanceId: number, classIds: number[]): Promise<void> {
-  await db.delete(performanceClassesTable).where(eq(performanceClassesTable.performanceId, performanceId));
-  if (classIds.length > 0) {
-    await db.insert(performanceClassesTable).values(classIds.map((classId) => ({ performanceId, classId })));
+function requireOdoo(res: import("express").Response): boolean {
+  if (!isOdooConfigured()) {
+    res.status(503).json({
+      error: "Odoo integration not configured",
+      hint: "Set ODOO_URL, ODOO_DB, ODOO_USERNAME, and ODOO_API_KEY.",
+    });
+    return false;
   }
+  return true;
 }
 
-function formatPerformance(p: typeof performancesTable.$inferSelect, classIds: number[]) {
+function formatPerformance(performance: OdooPerformance) {
   return {
-    ...p,
-    participatingClassIds: classIds,
-    time: p.time ?? null,
-    description: p.description ?? null,
-    ticketPrice: p.ticketPrice != null ? parseFloat(p.ticketPrice) : null,
-    createdAt: p.createdAt.toISOString(),
+    id: performance.id,
+    title: performance.title,
+    date: performance.date,
+    time: performance.time || null,
+    venue: performance.venue,
+    description: performance.description || null,
+    status: performance.status,
+    participatingClassIds: performance.participating_class_ids,
+    ticketPrice: performance.ticket_price || null,
+    capacity: performance.capacity || null,
+    createdAt: performance.create_date,
+    managedBySanity: Boolean(performance.sanity_id),
   };
+}
+
+function odooValues(data: Record<string, unknown>) {
+  const values: Record<string, unknown> = {};
+  const directFields = ["title", "date", "time", "venue", "description", "status", "capacity"];
+  for (const field of directFields) {
+    if (data[field] !== undefined) values[field] = data[field] || false;
+  }
+  if (data.ticketPrice !== undefined) values.ticket_price = data.ticketPrice || 0;
+  if (data.participatingClassIds !== undefined) {
+    values.participating_class_ids = [[6, 0, data.participatingClassIds]];
+  }
+  return values;
 }
 
 router.get("/performances", async (req, res): Promise<void> => {
   const params = ListPerformancesQueryParams.safeParse(req.query);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-
-  const { search, upcoming } = params.data;
-  const conditions = [];
-  if (search) conditions.push(ilike(performancesTable.title, `%${search}%`));
-  if (upcoming) {
-    conditions.push(eq(performancesTable.status, "upcoming"));
-  }
-
-  const performances = await db
-    .select()
-    .from(performancesTable)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(performancesTable.date);
-
-  const result = await Promise.all(
-    performances.map(async (p) => formatPerformance(p, await getParticipatingClassIds(p.id)))
-  );
-  res.json(result);
+  if (!requireOdoo(res)) return;
+  const records = await listOdooPerformances(params.data.search ?? "", params.data.upcoming ?? false);
+  res.json(records.map(formatPerformance));
 });
 
 router.post("/performances", async (req, res): Promise<void> => {
   const parsed = CreatePerformanceBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-
-  const { participatingClassIds = [], ticketPrice, ...rest } = parsed.data as {
-    participatingClassIds?: number[];
-    ticketPrice?: number;
-  } & Record<string, unknown>;
-
-  const [performance] = await db
-    .insert(performancesTable)
-    .values({
-      ...rest as Partial<typeof performancesTable.$inferInsert>,
-      ticketPrice: ticketPrice != null ? String(ticketPrice) : undefined,
-      status: (rest.status as string) ?? "upcoming",
-    })
-    .returning();
-
-  await setParticipatingClasses(performance.id, participatingClassIds);
-  res.status(201).json(formatPerformance(performance, participatingClassIds));
+  if (!requireOdoo(res)) return;
+  const performance = await createOdooPerformance(odooValues(parsed.data));
+  res.status(201).json(formatPerformance(performance));
 });
 
 router.get("/performances/:id", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(raw, 10);
-  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-
-  const [performance] = await db.select().from(performancesTable).where(eq(performancesTable.id, id));
+  const id = Number(raw);
+  if (!Number.isInteger(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  if (!requireOdoo(res)) return;
+  const performance = await getOdooPerformance(id);
   if (!performance) { res.status(404).json({ error: "Performance not found" }); return; }
-
-  const classIds = await getParticipatingClassIds(id);
-  res.json(formatPerformance(performance, classIds));
+  res.json(formatPerformance(performance));
 });
 
 router.patch("/performances/:id", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(raw, 10);
-  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-
+  const id = Number(raw);
+  if (!Number.isInteger(id)) { res.status(400).json({ error: "Invalid id" }); return; }
   const parsed = UpdatePerformanceBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-
-  const { participatingClassIds, ticketPrice, ...rest } = parsed.data as {
-    participatingClassIds?: number[];
-    ticketPrice?: number;
-  } & Record<string, unknown>;
-
-  const updateData: Partial<typeof performancesTable.$inferInsert> = { ...rest as Partial<typeof performancesTable.$inferInsert> };
-  if (ticketPrice !== undefined) updateData.ticketPrice = ticketPrice != null ? String(ticketPrice) : undefined;
-
-  const [performance] = await db
-    .update(performancesTable)
-    .set(updateData)
-    .where(eq(performancesTable.id, id))
-    .returning();
-
-  if (!performance) { res.status(404).json({ error: "Performance not found" }); return; }
-
-  if (participatingClassIds !== undefined) {
-    await setParticipatingClasses(id, participatingClassIds);
+  if (!requireOdoo(res)) return;
+  const existing = await getOdooPerformance(id);
+  if (!existing) { res.status(404).json({ error: "Performance not found" }); return; }
+  const sourceOwnedFields = ["title", "date", "time", "venue", "description", "status"];
+  if (existing.sanity_id && sourceOwnedFields.some((field) => parsed.data[field as keyof typeof parsed.data] !== undefined)) {
+    res.status(409).json({
+      error: "This performance is still managed by Sanity. Only Odoo-specific classes, ticket price, and capacity can be changed until website cutover.",
+    });
+    return;
   }
-
-  const classIds = participatingClassIds ?? await getParticipatingClassIds(id);
-  res.json(formatPerformance(performance, classIds));
+  const performance = await updateOdooPerformance(id, odooValues(parsed.data));
+  if (!performance) { res.status(404).json({ error: "Performance not found" }); return; }
+  res.json(formatPerformance(performance));
 });
 
 router.delete("/performances/:id", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(raw, 10);
-  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-
-  await db.delete(performancesTable).where(eq(performancesTable.id, id));
+  const id = Number(raw);
+  if (!Number.isInteger(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  if (!requireOdoo(res)) return;
+  const existing = await getOdooPerformance(id);
+  if (!existing) { res.status(404).json({ error: "Performance not found" }); return; }
+  if (existing.sanity_id) {
+    res.status(409).json({ error: "This performance is managed by Sanity and cannot be deleted from the Odoo mirror." });
+    return;
+  }
+  if (!await deleteOdooPerformance(id)) {
+    res.status(404).json({ error: "Performance not found" });
+    return;
+  }
   res.sendStatus(204);
 });
 

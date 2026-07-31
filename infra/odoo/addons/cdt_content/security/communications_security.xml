@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="module_category_cdt_communications" model="ir.module.category">
+    <field name="name">CDT Communications</field>
+    <field name="description">Drafting and sending permissions for CDT audience communications.</field>
+    <field name="sequence">26</field>
+  </record>
+
+  <record id="group_communications_user" model="res.groups">
+    <field name="name">Communications User</field>
+    <field name="category_id" ref="module_category_cdt_communications"/>
+    <field name="implied_ids" eval="[(4, ref('mass_mailing.group_mass_mailing_user'))]"/>
+    <field name="comment">Can manage lists, recipients, and campaign drafts. Cannot send or schedule bulk campaigns.</field>
+  </record>
+
+  <record id="group_communications_manager" model="res.groups">
+    <field name="name">Communications Manager</field>
+    <field name="category_id" ref="module_category_cdt_communications"/>
+    <field name="implied_ids" eval="[(4, ref('group_communications_user')), (4, ref('mass_mailing.group_mass_mailing_campaign'))]"/>
+    <field name="users" eval="[(4, ref('base.user_admin'))]"/>
+    <field name="comment">Can approve, schedule, and send bulk campaigns in addition to managing drafts.</field>
+  </record>
+</odoo>

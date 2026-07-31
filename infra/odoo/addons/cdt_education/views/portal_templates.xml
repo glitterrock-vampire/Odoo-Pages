@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="portal_my_home_education" inherit_id="portal.portal_my_home" name="Education Portal Card">
+    <xpath expr="//div[@id='portal_common_category']" position="before">
+      <div class="o_portal_category row g-2 mt-3" id="portal_education_category">
+        <div class="col-12"><h3>Education</h3></div>
+        <t t-call="portal.portal_docs_entry">
+          <t t-set="icon" t-value="'/portal/static/src/img/portal-connection.svg'"/>
+          <t t-set="title">Family Portal</t>
+          <t t-set="text">Children, schedules, attendance, grades, invoices and balances</t>
+          <t t-set="url" t-value="'/my/education'"/>
+          <t t-set="config_card" t-value="True"/>
+        </t>
+      </div>
+    </xpath>
+  </template>
+
+  <template id="portal_my_education" name="My Education">
+    <t t-call="portal.portal_layout">
+      <t t-set="additional_title">Family Portal</t>
+      <div class="container py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+          <div>
+            <p class="text-muted mb-1">CDT Jamaica</p>
+            <h1 class="h2 mb-0">Family Portal</h1>
+            <p class="text-muted mt-2 mb-0" t-if="is_guardian_view">A secure household view of your linked students.</p>
+          </div>
+          <a href="/my" class="btn btn-outline-secondary">Back to My Account</a>
+        </div>
+
+        <t t-if="not students">
+          <div class="alert alert-info">Your account is not linked to a student or guardian record yet. Contact the registrar for assistance.</div>
+        </t>
+
+        <div class="row g-3 mb-4" t-if="students">
+          <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Linked students</div><div class="h3 mb-0 mt-1"><t t-esc="len(students)"/></div></div></div></div>
+          <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Upcoming classes</div><div class="h3 mb-0 mt-1"><t t-esc="len(upcoming_schedule)"/></div></div></div></div>
+          <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Fees paid</div><div class="h5 mb-0 mt-2"><span t-esc="total_paid" t-options="{'widget': 'monetary', 'display_currency': portal_currency}"/></div></div></div></div>
+          <div class="col-6 col-lg-3"><div class="card h-100 border-warning"><div class="card-body"><div class="text-muted small">Balance due</div><div class="h5 mb-0 mt-2"><span t-esc="total_balance" t-options="{'widget': 'monetary', 'display_currency': portal_currency}"/></div></div></div></div>
+        </div>
+
+        <t t-foreach="students" t-as="student">
+          <section class="card mb-4">
+            <div class="card-body">
+              <div class="d-flex flex-wrap justify-content-between gap-3">
+                <div>
+                  <h2 class="h4 mb-1"><span t-field="student.full_name"/></h2>
+                  <div class="text-muted"><span t-field="student.name"/> · <span t-field="student.status"/></div>
+                </div>
+                <div class="text-end">
+                  <div t-if="student.current_program_id"><strong>Program:</strong> <span t-field="student.current_program_id"/></div>
+                  <div t-if="student.batch_id"><strong>Batch:</strong> <span t-field="student.batch_id"/></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </t>
+
+        <section class="card mb-4">
+          <div class="card-header"><h2 class="h5 mb-0">Upcoming Timetable</h2></div>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>Date and time</th><th>Course</th><th>Group</th><th>Instructor</th><th>Room</th></tr></thead>
+              <tbody>
+                <tr t-foreach="upcoming_schedule" t-as="schedule">
+                  <td><span t-field="schedule.start_datetime"/></td>
+                  <td><span t-field="schedule.course_id"/></td>
+                  <td><span t-field="schedule.student_group_id"/></td>
+                  <td><span t-field="schedule.instructor_id"/></td>
+                  <td><span t-field="schedule.room_id"/></td>
+                </tr>
+                <tr t-if="not upcoming_schedule"><td colspan="5" class="text-muted text-center py-4">No upcoming classes.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <section class="card h-100">
+              <div class="card-header"><h2 class="h5 mb-0">Recent Attendance</h2></div>
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Date</th><th>Student</th><th>Group</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr t-foreach="attendance_records" t-as="attendance">
+                      <td><span t-field="attendance.date"/></td>
+                      <td><span t-field="attendance.student_id"/></td>
+                      <td><span t-field="attendance.student_group_id"/></td>
+                      <td><span t-field="attendance.status"/></td>
+                    </tr>
+                    <tr t-if="not attendance_records"><td colspan="4" class="text-muted text-center py-4">No attendance records.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+          <div class="col-lg-6">
+            <section class="card h-100">
+              <div class="card-header"><h2 class="h5 mb-0">Published Grades</h2></div>
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Date</th><th>Student</th><th>Course</th><th>Score</th><th>Grade</th></tr></thead>
+                  <tbody>
+                    <tr t-foreach="assessment_results" t-as="result">
+                      <td><span t-field="result.assessment_date"/></td>
+                      <td><span t-field="result.student_id"/></td>
+                      <td><span t-field="result.course_id"/></td>
+                      <td><span t-field="result.percentage"/>%</td>
+                      <td><span t-field="result.grade"/></td>
+                    </tr>
+                    <tr t-if="not assessment_results"><td colspan="5" class="text-muted text-center py-4">No published grades.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <section class="card mt-4">
+          <div class="card-header d-flex justify-content-between align-items-center"><h2 class="h5 mb-0">Invoices, balances and receipts</h2><span class="small text-muted">Receipts appear after payment is posted</span></div>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>Reference</th><th>Student</th><th>Due date</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr t-foreach="student_fees" t-as="fee">
+                  <td><span t-field="fee.name"/><div class="small text-success" t-if="fee.payment_state == 'paid'">Receipt posted</div><div class="small text-muted" t-elif="fee.invoice_id">Invoice <span t-field="fee.invoice_id"/></div></td>
+                  <td><span t-field="fee.student_id"/></td>
+                  <td><span t-field="fee.due_date"/></td>
+                  <td><span t-field="fee.amount" t-options="{'widget': 'monetary', 'display_currency': fee.currency_id}"/></td>
+                  <td><span t-field="fee.amount_paid" t-options="{'widget': 'monetary', 'display_currency': fee.currency_id}"/></td>
+                  <td><span t-field="fee.balance" t-options="{'widget': 'monetary', 'display_currency': fee.currency_id}"/></td>
+                  <td><span t-field="fee.state"/></td>
+                </tr>
+                <tr t-if="not student_fees"><td colspan="7" class="text-muted text-center py-4">No fee records.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </t>
+  </template>
+</odoo>

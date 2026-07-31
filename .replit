@@ -25,6 +25,5 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-ODOO_DB = "tobago-east-med"
-ODOO_URL = "https://tobago-east-med.odoo.com"
-ODOO_USERNAME = "andrewalters39@gmail.com"
+ERPNEXT_CURRENCY = "JMD"
+ERPNEXT_DONATION_DOCTYPE = "CDT Donation"

@@ -1,51 +1,50 @@
 import { useState } from "react";
-import { useListClasses, useDeleteClass, getListClassesQueryKey } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Link } from "wouter";
+import { useListClasses } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Trash2, Edit2, MapPin, Clock } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Clock, Database, Link2, MapPin, Search, Users } from "lucide-react";
+
+function money(value: number | null | undefined, currency: string): string {
+  if (value === null || value === undefined) return "Not assigned";
+  return `${currency} ${value.toLocaleString("en-JM", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
 export default function Classes() {
   const [search, setSearch] = useState("");
-  const { data: classes, isLoading } = useListClasses({ search: search || undefined });
-  const deleteClass = useDeleteClass();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this class?")) {
-      deleteClass.mutate({ id }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListClassesQueryKey() });
-          toast({ title: "Class deleted successfully" });
-        }
-      });
-    }
-  };
+  const { data: classResponse, isLoading, isError } = useListClasses({ search: search || undefined });
+  const classes = Array.isArray(classResponse) ? classResponse : [];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="animate-in space-y-6 fade-in duration-300">
+      <div className="flex flex-col justify-between gap-4 border-b pb-5 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-4xl font-extrabold text-primary font-display">Classes</h1>
-          <p className="text-muted-foreground mt-1">Manage dance classes, styles, and schedules.</p>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">School operations</p>
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Classes</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Odoo course offerings with enrolled students and programme tuition.</p>
         </div>
-        <Button className="gap-2 rounded-full font-bold shadow-md bg-secondary text-secondary-foreground hover:bg-secondary/90"><Plus className="w-4 h-4" /> Add Class</Button>
+        <Badge variant="outline" className="w-fit gap-2 border-blue-200 bg-blue-50 px-3 py-2 text-blue-800">
+          <Database aria-hidden="true" className="h-4 w-4" /> Odoo primary
+        </Badge>
       </div>
 
-      <Card className="shadow-xl border-none rounded-2xl overflow-hidden bg-card">
-        <div className="p-4 border-b border-border bg-muted/10">
+      <div className="flex items-start gap-3 border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950">
+        <Link2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+        <p><span className="font-semibold">Enrollment is linked.</span> Class counts come from Odoo course enrollments, and the tuition amount comes from the matching programme fee structure.</p>
+      </div>
+
+      <Card className="overflow-hidden">
+        <div className="border-b bg-muted/10 p-4">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search classes by name or style..." 
-              className="pl-9 rounded-xl bg-background border-muted shadow-sm focus-visible:ring-primary"
+            <Search aria-hidden="true" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              aria-label="Search classes"
+              placeholder="Search classes or programmes"
+              className="pl-9"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
             />
           </div>
         </div>
@@ -53,62 +52,52 @@ export default function Classes() {
           <Table>
             <TableHeader className="bg-muted/30">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="font-semibold text-primary">Class Name & Style</TableHead>
-                <TableHead className="font-semibold text-primary">Instructor</TableHead>
-                <TableHead className="font-semibold text-primary">Schedule & Location</TableHead>
-                <TableHead className="font-semibold text-primary">Enrollment</TableHead>
-                <TableHead className="text-right font-semibold text-primary">Actions</TableHead>
+                <TableHead>Class / programme</TableHead>
+                <TableHead>Instructor</TableHead>
+                <TableHead>Schedule / location</TableHead>
+                <TableHead>Students</TableHead>
+                <TableHead>Tuition</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground font-medium animate-pulse">Loading classes...</TableCell></TableRow>
-              ) : classes?.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground font-medium">No classes found.</TableCell></TableRow>
-              ) : (
-                classes?.map(cls => (
-                  <TableRow key={cls.id} className="group transition-colors hover:bg-muted/20">
-                    <TableCell>
-                      <div className="font-bold text-primary text-base">{cls.name}</div>
-                      <div className="text-xs font-semibold text-secondary uppercase tracking-wider mt-0.5">{cls.style}</div>
-                    </TableCell>
-                    <TableCell className="font-medium">{cls.instructor}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-sm">
-                        <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span>{cls.schedule}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span>{cls.location}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary" 
-                            style={{ width: `${Math.min(100, (cls.enrolledCount / cls.capacity) * 100)}%` }} 
-                          />
-                        </div>
-                        <span className="text-sm font-medium font-mono">
-                          {cls.enrolledCount}/{cls.capacity}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-secondary hover:bg-secondary/10">
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(cls.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+                <TableRow><TableCell colSpan={5} className="py-12 text-center font-medium text-muted-foreground animate-pulse">Loading linked classes…</TableCell></TableRow>
+              ) : isError || !Array.isArray(classResponse) ? (
+                <TableRow><TableCell colSpan={5} className="py-12 text-center font-medium text-destructive">Classes could not be loaded from Odoo.</TableCell></TableRow>
+              ) : classes.length === 0 ? (
+                <TableRow><TableCell colSpan={5} className="py-12 text-center text-muted-foreground">No Odoo course offerings found.</TableCell></TableRow>
+              ) : classes.map((classRecord) => (
+                <TableRow key={classRecord.id}>
+                  <TableCell>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-primary">{classRecord.name}</p>
+                      {classRecord.sampleData && <Badge variant="outline" className="border-violet-200 bg-violet-50 text-[10px] uppercase tracking-wide text-violet-800">Sample</Badge>}
+                    </div>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-secondary">{classRecord.style}</p>
+                    <p className="mt-1 text-xs capitalize text-muted-foreground">{classRecord.classStatus.replace("_", " ")}</p>
+                  </TableCell>
+                  <TableCell className="font-medium">{classRecord.instructor}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 text-sm"><Clock aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" /><span>{classRecord.schedule}</span></div>
+                    <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin aria-hidden="true" className="h-3.5 w-3.5" /><span>{classRecord.location}</span></div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Users aria-hidden="true" className="h-4 w-4 text-primary/55" />
+                      <span className="font-mono text-sm font-semibold">{classRecord.enrolledCount}/{classRecord.capacity}</span>
+                    </div>
+                    <div className="mt-2 flex max-w-xs flex-wrap gap-1.5">
+                      {classRecord.studentNames.map((name) => <Badge key={name} variant="outline" className="bg-background text-xs font-medium">{name}</Badge>)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Link href="/tuition" className="block min-h-11 rounded-sm px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <p className="font-semibold tabular-nums text-primary">{money(classRecord.fee, classRecord.currency)}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">Programme fee · View ledger</p>
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </CardContent>

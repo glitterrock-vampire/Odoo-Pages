@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="module_category_cdt_education" model="ir.module.category">
+    <field name="name">CDT Education</field>
+    <field name="description">Access levels for CDT Jamaica education records.</field>
+    <field name="sequence">25</field>
+  </record>
+
+  <record id="group_education_user" model="res.groups">
+    <field name="name">Education User</field>
+    <field name="category_id" ref="module_category_cdt_education"/>
+    <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+  </record>
+
+  <record id="group_education_instructor" model="res.groups">
+    <field name="name">Instructor</field>
+    <field name="category_id" ref="module_category_cdt_education"/>
+    <field name="implied_ids" eval="[(4, ref('group_education_user'))]"/>
+  </record>
+
+  <record id="group_education_registrar" model="res.groups">
+    <field name="name">Registrar</field>
+    <field name="category_id" ref="module_category_cdt_education"/>
+    <field name="implied_ids" eval="[(4, ref('group_education_user'))]"/>
+  </record>
+
+  <record id="group_education_finance" model="res.groups">
+    <field name="name">Education Finance</field>
+    <field name="category_id" ref="module_category_cdt_education"/>
+    <field name="implied_ids" eval="[(4, ref('group_education_user'))]"/>
+  </record>
+
+  <record id="group_education_manager" model="res.groups">
+    <field name="name">Education Manager</field>
+    <field name="category_id" ref="module_category_cdt_education"/>
+    <field name="implied_ids" eval="[(4, ref('group_education_instructor')), (4, ref('group_education_registrar')), (4, ref('group_education_finance'))]"/>
+    <field name="users" eval="[(4, ref('base.user_admin'))]"/>
+  </record>
+
+  <record id="rule_instructor_own_schedules" model="ir.rule">
+    <field name="name">Instructors see their schedules</field>
+    <field name="model_id" ref="model_cdt_course_schedule"/>
+    <field name="groups" eval="[(4, ref('group_education_instructor'))]"/>
+    <field name="domain_force">['|', ('instructor_id.user_id', '=', user.id), ('instructor_id.user_id', '=', False)]</field>
+  </record>
+  <record id="rule_manager_all_schedules" model="ir.rule">
+    <field name="name">Education managers see all schedules</field>
+    <field name="model_id" ref="model_cdt_course_schedule"/>
+    <field name="groups" eval="[(4, ref('group_education_manager'))]"/>
+    <field name="domain_force">[(1, '=', 1)]</field>
+  </record>
+
+  <record id="rule_instructor_own_assessments" model="ir.rule">
+    <field name="name">Instructors see their assessments</field>
+    <field name="model_id" ref="model_cdt_assessment_plan"/>
+    <field name="groups" eval="[(4, ref('group_education_instructor'))]"/>
+    <field name="domain_force">['|', '|', ('examiner_id.user_id', '=', user.id), ('supervisor_id.user_id', '=', user.id), '&amp;', ('examiner_id', '=', False), ('supervisor_id', '=', False)]</field>
+  </record>
+  <record id="rule_manager_all_assessments" model="ir.rule">
+    <field name="name">Education managers see all assessments</field>
+    <field name="model_id" ref="model_cdt_assessment_plan"/>
+    <field name="groups" eval="[(4, ref('group_education_manager'))]"/>
+    <field name="domain_force">[(1, '=', 1)]</field>
+  </record>
+</odoo>

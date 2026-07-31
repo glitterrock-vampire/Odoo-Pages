@@ -2,74 +2,94 @@ import { Router, type IRouter } from "express";
 import { eq, sql } from "drizzle-orm";
 import { db, studentsTable, classesTable, performancesTable } from "@workspace/db";
 import {
-  listOdooTasks,
-  listOdooDonations,
-  listOdooInvoices,
-  listOdooPartners,
+  getOdooDashboardSnapshot,
   isOdooConfigured,
 } from "../lib/odoo";
 
 const router: IRouter = Router();
 
 router.get("/dashboard/stats", async (req, res): Promise<void> => {
-  // Local DB counts — always available
   const [studentCount, classCount, upcomingCount] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(studentsTable).where(eq(studentsTable.status, "active")),
     db.select({ count: sql<number>`count(*)` }).from(classesTable).where(eq(classesTable.status, "active")),
     db.select({ count: sql<number>`count(*)` }).from(performancesTable).where(eq(performancesTable.status, "upcoming")),
   ]);
 
-  // Odoo-sourced stats — null when not configured
-  let odooStats: {
+  const dashboardStats: {
     totalDonations: number | null;
     openTasks: number | null;
     monthlyRevenue: number | null;
     pendingInvoices: number | null;
     newContactsThisMonth: number | null;
+    feesBilled: number | null;
+    feesCollected: number | null;
+    feesOutstanding: number | null;
+    unbilledFees: number | null;
+    overdueFeesCount: number | null;
+    currency: string;
+    paymentProviderName: string | null;
+    paymentProviderState: string | null;
+    paymentJournalName: string | null;
+    teamMembers: number | null;
+    repertoireItems: number | null;
+    totalPerformances: number | null;
+    mediaItems: number | null;
+    contentLastSyncAt: string | null;
+    contentSyncStatus: string | null;
   } = {
     totalDonations: null,
     openTasks: null,
     monthlyRevenue: null,
     pendingInvoices: null,
     newContactsThisMonth: null,
+    feesBilled: null,
+    feesCollected: null,
+    feesOutstanding: null,
+    unbilledFees: null,
+    overdueFeesCount: null,
+    currency: "JMD",
+    paymentProviderName: null,
+    paymentProviderState: null,
+    paymentJournalName: null,
+    teamMembers: null,
+    repertoireItems: null,
+    totalPerformances: null,
+    mediaItems: null,
+    contentLastSyncAt: null,
+    contentSyncStatus: null,
   };
+
+  let totalStudents = Number(studentCount[0]?.count ?? 0);
+  let activeClasses = Number(classCount[0]?.count ?? 0);
+  let upcomingPerformances = Number(upcomingCount[0]?.count ?? 0);
 
   if (isOdooConfigured()) {
     try {
-      const [tasks, donations, invoices, partners] = await Promise.all([
-        listOdooTasks("", undefined, 500),
-        listOdooDonations("", "paid", 500),
-        listOdooInvoices("", "posted", 500),
-        listOdooPartners("", 500),
-      ]);
-
       const monthStart = new Date();
       monthStart.setDate(1);
-      const monthStr = monthStart.toISOString().split("T")[0];
-
-      odooStats = {
-        openTasks: tasks.filter(
-          (t) => t.stage_id && !["Done", "Cancelled"].includes(t.stage_id[1])
-        ).length,
-        totalDonations: donations.reduce((s, d) => s + d.amount, 0),
-        monthlyRevenue: invoices
-          .filter((i) => i.invoice_date && i.invoice_date >= monthStr)
-          .reduce((s, i) => s + i.amount_total, 0),
-        pendingInvoices: invoices.filter((i) => i.payment_state === "not_paid").length,
-        newContactsThisMonth: partners.filter((p) => p.create_date && p.create_date >= monthStr).length,
-      };
+      const month = monthStart.toISOString().split("T")[0];
+      const odoo = await getOdooDashboardSnapshot(month);
+      const {
+        activeStudents: odooActiveStudents,
+        activeClasses: odooActiveClasses,
+        upcomingPerformances: odooUpcomingPerformances,
+        ...odooAdministrativeStats
+      } = odoo;
+      totalStudents = odooActiveStudents;
+      activeClasses = odooActiveClasses;
+      upcomingPerformances = odooUpcomingPerformances;
+      Object.assign(dashboardStats, odooAdministrativeStats);
     } catch (err) {
       req.log.error({ err }, "Failed to fetch Odoo dashboard stats");
-      // Leave odooStats as null — the client can show a warning
     }
   }
 
   res.json({
-    totalStudents: Number(studentCount[0]?.count ?? 0),
-    activeClasses: Number(classCount[0]?.count ?? 0),
-    upcomingPerformances: Number(upcomingCount[0]?.count ?? 0),
+    totalStudents,
+    activeClasses,
+    upcomingPerformances,
     odooConfigured: isOdooConfigured(),
-    ...odooStats,
+    ...dashboardStats,
   });
 });
 

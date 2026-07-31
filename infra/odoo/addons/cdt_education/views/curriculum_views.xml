@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_course_list" model="ir.ui.view">
+    <field name="name">cdt.course.list</field><field name="model">cdt.course</field>
+    <field name="arch" type="xml"><list><field name="code"/><field name="name"/><field name="department_id"/><field name="credit_hours"/><field name="default_grading_scale_id"/><field name="active"/></list></field>
+  </record>
+  <record id="view_course_form" model="ir.ui.view">
+    <field name="name">cdt.course.form</field><field name="model">cdt.course</field>
+    <field name="arch" type="xml">
+      <form><sheet><div class="oe_title"><label for="name"/><h1><field name="name"/></h1><h2><field name="code"/></h2></div><group><group><field name="department_id"/><field name="credit_hours"/><field name="default_grading_scale_id"/><field name="active"/></group><group><field name="instructor_ids" widget="many2many_tags"/><field name="topic_ids" widget="many2many_tags"/><field name="assessment_criterion_ids" widget="many2many_tags"/></group></group><notebook><page string="Description"><field name="description" widget="html"/></page></notebook></sheet><chatter/></form>
+    </field>
+  </record>
+  <record id="action_course" model="ir.actions.act_window">
+    <field name="name">Courses</field><field name="res_model">cdt.course</field><field name="view_mode">list,form</field>
+  </record>
+  <record id="action_course_topic" model="ir.actions.act_window">
+    <field name="name">Course Topics</field><field name="res_model">cdt.course.topic</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_program_list" model="ir.ui.view">
+    <field name="name">cdt.program.list</field><field name="model">cdt.program</field>
+    <field name="arch" type="xml"><list><field name="code"/><field name="name"/><field name="department_id"/><field name="duration_terms"/><field name="course_count"/><field name="published"/><field name="active"/></list></field>
+  </record>
+  <record id="view_program_form" model="ir.ui.view">
+    <field name="name">cdt.program.form</field><field name="model">cdt.program</field>
+    <field name="arch" type="xml">
+      <form><sheet><div class="oe_title"><label for="name"/><h1><field name="name"/></h1><h2><field name="code"/></h2></div><group><group><field name="department_id"/><field name="duration_terms"/></group><group><field name="published"/><field name="active"/><field name="course_count" readonly="1"/></group></group><notebook><page string="Courses"><field name="course_line_ids"><list editable="bottom"><field name="sequence" widget="handle"/><field name="course_id"/><field name="required"/><field name="recommended_term"/></list></field></page><page string="Description"><field name="description" widget="html"/></page></notebook></sheet><chatter/></form>
+    </field>
+  </record>
+  <record id="action_program" model="ir.actions.act_window">
+    <field name="name">Programs</field><field name="res_model">cdt.program</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_course_offering_list" model="ir.ui.view">
+    <field name="name">cdt.course.offering.list</field><field name="model">cdt.course.offering</field>
+    <field name="arch" type="xml"><list decoration-success="state == 'in_progress'" decoration-muted="state in ('completed', 'cancelled')"><field name="name"/><field name="course_id"/><field name="program_id"/><field name="academic_year_id"/><field name="academic_term_id"/><field name="capacity"/><field name="delivery_mode"/><field name="state" widget="badge"/></list></field>
+  </record>
+  <record id="view_course_offering_form" model="ir.ui.view">
+    <field name="name">cdt.course.offering.form</field><field name="model">cdt.course.offering</field>
+    <field name="arch" type="xml"><form><header><field name="state" widget="statusbar" statusbar_visible="draft,open,in_progress,completed"/></header><sheet><div class="oe_title"><label for="name"/><h1><field name="name" readonly="1"/></h1></div><group><group><field name="course_id"/><field name="program_id"/><field name="academic_year_id"/><field name="academic_term_id" domain="[('academic_year_id', '=', academic_year_id)]"/></group><group><field name="instructor_ids" widget="many2many_tags"/><field name="capacity"/><field name="delivery_mode"/><field name="active"/></group></group><field name="legacy_id" groups="cdt_education.group_education_manager"/></sheet><chatter/></form></field>
+  </record>
+  <record id="action_course_offering" model="ir.actions.act_window">
+    <field name="name">Classes / Course Offerings</field><field name="res_model">cdt.course.offering</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_student_group_list" model="ir.ui.view">
+    <field name="name">cdt.student.group.list</field><field name="model">cdt.student.group</field>
+    <field name="arch" type="xml"><list><field name="name"/><field name="group_type"/><field name="program_id"/><field name="course_id"/><field name="academic_year_id"/><field name="academic_term_id"/><field name="student_count"/><field name="capacity"/><field name="active"/></list></field>
+  </record>
+  <record id="view_student_group_form" model="ir.ui.view">
+    <field name="name">cdt.student.group.form</field><field name="model">cdt.student.group</field>
+    <field name="arch" type="xml"><form><sheet><div class="oe_title"><h1><field name="name"/></h1></div><group><group><field name="group_type"/><field name="program_id"/><field name="course_id" invisible="group_type != 'course'"/><field name="offering_id" invisible="group_type != 'course'"/><field name="batch_id" invisible="group_type != 'batch'"/></group><group><field name="academic_year_id"/><field name="academic_term_id" domain="[('academic_year_id', '=', academic_year_id)]"/><field name="instructor_ids" widget="many2many_tags"/><field name="capacity"/><field name="student_count" readonly="1"/><field name="active"/></group></group><notebook><page string="Students"><field name="member_line_ids"><list editable="bottom"><field name="student_id"/><field name="date_joined"/><field name="active"/></list></field></page></notebook></sheet><chatter/></form></field>
+  </record>
+  <record id="action_student_group" model="ir.actions.act_window">
+    <field name="name">Student Groups</field><field name="res_model">cdt.student.group</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_course_schedule_list" model="ir.ui.view">
+    <field name="name">cdt.course.schedule.list</field><field name="model">cdt.course.schedule</field>
+    <field name="arch" type="xml"><list decoration-success="state == 'completed'" decoration-muted="state == 'cancelled'"><field name="name"/><field name="start_datetime"/><field name="end_datetime"/><field name="course_id"/><field name="student_group_id"/><field name="instructor_id"/><field name="room_id"/><field name="attendance_count"/><field name="state" widget="badge"/></list></field>
+  </record>
+  <record id="view_course_schedule_calendar" model="ir.ui.view">
+    <field name="name">cdt.course.schedule.calendar</field><field name="model">cdt.course.schedule</field>
+    <field name="arch" type="xml"><calendar string="Course Timetable" date_start="start_datetime" date_stop="end_datetime" color="course_id"><field name="course_id"/><field name="student_group_id"/><field name="instructor_id"/><field name="room_id"/></calendar></field>
+  </record>
+  <record id="view_course_schedule_form" model="ir.ui.view">
+    <field name="name">cdt.course.schedule.form</field><field name="model">cdt.course.schedule</field>
+    <field name="arch" type="xml"><form><header><button name="action_complete" type="object" string="Complete" class="btn-primary" invisible="state != 'planned'"/><button name="action_cancel" type="object" string="Cancel" invisible="state != 'planned'"/><field name="state" widget="statusbar" statusbar_visible="planned,completed"/></header><sheet><div class="oe_title"><label for="name"/><h1><field name="name" readonly="1"/></h1></div><group><group><field name="student_group_id"/><field name="offering_id"/><field name="course_id"/><field name="instructor_id"/></group><group><field name="start_datetime"/><field name="end_datetime"/><field name="room_id"/><field name="attendance_count" readonly="1"/></group></group><notebook><page string="Attendance"><field name="attendance_ids"><list editable="bottom"><field name="student_id"/><field name="date"/><field name="status"/><field name="check_in"/><field name="check_out"/><field name="remarks"/></list></field></page><page string="Notes"><field name="notes" widget="html"/></page></notebook></sheet><chatter/></form></field>
+  </record>
+  <record id="action_course_schedule" model="ir.actions.act_window">
+    <field name="name">Course Timetable</field><field name="res_model">cdt.course.schedule</field><field name="view_mode">calendar,list,form</field>
+  </record>
+
+  <record id="action_instructor_log" model="ir.actions.act_window">
+    <field name="name">Instructor Logs</field><field name="res_model">cdt.instructor.log</field><field name="view_mode">list,form</field>
+  </record>
+</odoo>

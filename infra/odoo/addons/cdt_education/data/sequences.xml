@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+  <record id="seq_student" model="ir.sequence">
+    <field name="name">Student Number</field>
+    <field name="code">cdt.student</field>
+    <field name="prefix">STU-</field>
+    <field name="padding">5</field>
+  </record>
+  <record id="seq_instructor" model="ir.sequence">
+    <field name="name">Instructor Number</field>
+    <field name="code">cdt.instructor</field>
+    <field name="prefix">INS-</field>
+    <field name="padding">4</field>
+  </record>
+  <record id="seq_student_applicant" model="ir.sequence">
+    <field name="name">Student Application</field>
+    <field name="code">cdt.student.applicant</field>
+    <field name="prefix">APP-</field>
+    <field name="padding">5</field>
+  </record>
+  <record id="seq_program_enrollment" model="ir.sequence">
+    <field name="name">Program Enrollment</field>
+    <field name="code">cdt.program.enrollment</field>
+    <field name="prefix">ENR-</field>
+    <field name="padding">5</field>
+  </record>
+  <record id="seq_course_offering" model="ir.sequence">
+    <field name="name">Course Offering</field>
+    <field name="code">cdt.course.offering</field>
+    <field name="prefix">CLS-</field>
+    <field name="padding">5</field>
+  </record>
+  <record id="seq_course_schedule" model="ir.sequence">
+    <field name="name">Course Schedule</field>
+    <field name="code">cdt.course.schedule</field>
+    <field name="prefix">SCH-</field>
+    <field name="padding">6</field>
+  </record>
+  <record id="seq_student_leave" model="ir.sequence">
+    <field name="name">Student Leave</field>
+    <field name="code">cdt.student.leave</field>
+    <field name="prefix">LEV-</field>
+    <field name="padding">5</field>
+  </record>
+  <record id="seq_assessment_plan" model="ir.sequence">
+    <field name="name">Assessment Plan</field>
+    <field name="code">cdt.assessment.plan</field>
+    <field name="prefix">ASM-</field>
+    <field name="padding">5</field>
+  </record>
+  <record id="seq_fee_schedule" model="ir.sequence">
+    <field name="name">Fee Schedule</field>
+    <field name="code">cdt.fee.schedule</field>
+    <field name="prefix">FSC-</field>
+    <field name="padding">5</field>
+  </record>
+  <record id="seq_student_fee" model="ir.sequence">
+    <field name="name">Student Fee</field>
+    <field name="code">cdt.student.fee</field>
+    <field name="prefix">FEE-</field>
+    <field name="padding">6</field>
+  </record>
+</odoo>

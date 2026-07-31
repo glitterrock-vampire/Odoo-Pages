@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_grading_scale_list" model="ir.ui.view">
+    <field name="name">cdt.grading.scale.list</field><field name="model">cdt.grading.scale</field>
+    <field name="arch" type="xml"><list><field name="name"/><field name="description"/><field name="active"/></list></field>
+  </record>
+  <record id="view_grading_scale_form" model="ir.ui.view">
+    <field name="name">cdt.grading.scale.form</field><field name="model">cdt.grading.scale</field>
+    <field name="arch" type="xml"><form><sheet><div class="oe_title"><h1><field name="name"/></h1></div><group><field name="description"/><field name="active"/></group><field name="line_ids"><list editable="bottom"><field name="grade"/><field name="minimum_percentage"/><field name="maximum_percentage"/><field name="description"/><field name="passing_grade"/></list></field></sheet></form></field>
+  </record>
+  <record id="action_grading_scale" model="ir.actions.act_window">
+    <field name="name">Grading Scales</field><field name="res_model">cdt.grading.scale</field><field name="view_mode">list,form</field>
+  </record>
+  <record id="action_assessment_criterion" model="ir.actions.act_window">
+    <field name="name">Assessment Criteria</field><field name="res_model">cdt.assessment.criterion</field><field name="view_mode">list,form</field>
+  </record>
+  <record id="action_assessment_group" model="ir.actions.act_window">
+    <field name="name">Assessment Groups</field><field name="res_model">cdt.assessment.group</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_assessment_plan_list" model="ir.ui.view">
+    <field name="name">cdt.assessment.plan.list</field><field name="model">cdt.assessment.plan</field>
+    <field name="arch" type="xml"><list decoration-success="state == 'completed'" decoration-muted="state == 'cancelled'"><field name="name"/><field name="title"/><field name="assessment_date"/><field name="assessment_group_id"/><field name="course_id"/><field name="student_group_id"/><field name="examiner_id"/><field name="maximum_score"/><field name="result_count"/><field name="state" widget="badge"/></list></field>
+  </record>
+  <record id="view_assessment_plan_calendar" model="ir.ui.view">
+    <field name="name">cdt.assessment.plan.calendar</field><field name="model">cdt.assessment.plan</field>
+    <field name="arch" type="xml"><calendar string="Assessment Calendar" date_start="start_datetime" date_stop="end_datetime" color="course_id"><field name="title"/><field name="course_id"/><field name="student_group_id"/><field name="room_id"/></calendar></field>
+  </record>
+  <record id="view_assessment_plan_form" model="ir.ui.view">
+    <field name="name">cdt.assessment.plan.form</field><field name="model">cdt.assessment.plan</field>
+    <field name="arch" type="xml"><form><header><button name="action_confirm" type="object" string="Confirm" class="btn-primary" invisible="state != 'draft'"/><button name="action_populate_students" type="object" string="Populate Students" invisible="state == 'cancelled'"/><button name="action_complete" type="object" string="Complete" class="btn-primary" invisible="state != 'confirmed'"/><field name="state" widget="statusbar" statusbar_visible="draft,confirmed,completed"/></header><sheet><div class="oe_title"><label for="name"/><h1><field name="name" readonly="1"/></h1><h2><field name="title"/></h2></div><group><group><field name="assessment_group_id"/><field name="course_id"/><field name="student_group_id"/><field name="academic_year_id"/><field name="academic_term_id" domain="[('academic_year_id', '=', academic_year_id)]"/></group><group><field name="assessment_date"/><field name="start_datetime"/><field name="end_datetime"/><field name="room_id"/><field name="examiner_id"/><field name="supervisor_id"/></group></group><group string="Grading"><field name="maximum_score"/><field name="grading_scale_id"/><field name="criterion_ids" widget="many2many_tags"/><field name="result_count" readonly="1"/></group><notebook><page string="Results"><field name="result_ids"><list editable="bottom"><field name="student_id"/><field name="score"/><field name="maximum_score" readonly="1"/><field name="percentage" readonly="1"/><field name="grade" readonly="1"/><field name="passed" readonly="1"/><field name="published"/></list></field></page><page string="Instructions"><field name="instructions" widget="html"/></page></notebook></sheet><chatter/></form></field>
+  </record>
+  <record id="action_assessment_plan" model="ir.actions.act_window">
+    <field name="name">Assessment Plans</field><field name="res_model">cdt.assessment.plan</field><field name="view_mode">calendar,list,form</field>
+  </record>
+
+  <record id="view_assessment_result_list" model="ir.ui.view">
+    <field name="name">cdt.assessment.result.list</field><field name="model">cdt.assessment.result</field>
+    <field name="arch" type="xml"><list decoration-success="passed" decoration-danger="not passed"><field name="assessment_date"/><field name="plan_id"/><field name="student_id"/><field name="course_id"/><field name="score"/><field name="maximum_score"/><field name="percentage"/><field name="grade"/><field name="passed"/><field name="published"/></list></field>
+  </record>
+  <record id="view_assessment_result_form" model="ir.ui.view">
+    <field name="name">cdt.assessment.result.form</field><field name="model">cdt.assessment.result</field>
+    <field name="arch" type="xml"><form><header><button name="action_publish" type="object" string="Publish to Portal" class="btn-primary" invisible="published"/><field name="published" widget="boolean_toggle"/></header><sheet><div class="oe_title"><h1><field name="student_id"/></h1></div><group><group><field name="plan_id"/><field name="course_id" readonly="1"/><field name="assessment_date" readonly="1"/></group><group><field name="score"/><field name="maximum_score" readonly="1"/><field name="percentage" readonly="1"/><field name="grade" readonly="1"/><field name="passed" readonly="1"/></group></group><notebook><page string="Criteria"><field name="criterion_line_ids"><list editable="bottom"><field name="criterion_id"/><field name="maximum_score"/><field name="score"/><field name="remarks"/></list></field></page><page string="Remarks"><field name="remarks"/></page></notebook></sheet><chatter/></form></field>
+  </record>
+  <record id="view_assessment_result_pivot" model="ir.ui.view">
+    <field name="name">cdt.assessment.result.pivot</field><field name="model">cdt.assessment.result</field>
+    <field name="arch" type="xml"><pivot string="Grade Book"><field name="course_id" type="row"/><field name="student_id" type="row"/><field name="assessment_date" interval="month" type="col"/><field name="percentage" type="measure"/></pivot></field>
+  </record>
+  <record id="view_assessment_result_graph" model="ir.ui.view">
+    <field name="name">cdt.assessment.result.graph</field><field name="model">cdt.assessment.result</field>
+    <field name="arch" type="xml"><graph string="Assessment Results" type="bar"><field name="course_id"/><field name="percentage" type="measure"/></graph></field>
+  </record>
+  <record id="action_assessment_result" model="ir.actions.act_window">
+    <field name="name">Assessment Results</field><field name="res_model">cdt.assessment.result</field><field name="view_mode">list,form,pivot,graph</field>
+  </record>
+  <record id="action_grade_book_report" model="ir.actions.act_window">
+    <field name="name">Grade Book</field><field name="res_model">cdt.assessment.result</field><field name="view_mode">pivot,graph,list</field>
+  </record>
+</odoo>

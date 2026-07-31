@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_team_member_list" model="ir.ui.view">
+    <field name="name">cdt.team.member.list</field>
+    <field name="model">cdt.team.member</field>
+    <field name="arch" type="xml">
+      <list default_order="member_type,sequence,name">
+        <field name="sequence" widget="handle"/>
+        <field name="headshot" widget="image"/>
+        <field name="name"/>
+        <field name="member_type" widget="badge"/>
+        <field name="role"/>
+        <field name="featured"/>
+        <field name="active"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_team_member_form" model="ir.ui.view">
+    <field name="name">cdt.team.member.form</field>
+    <field name="model">cdt.team.member</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <field name="headshot" widget="image" class="oe_avatar"/>
+          <div class="oe_title"><h1><field name="partner_id"/></h1></div>
+          <group><group><field name="member_type"/><field name="role"/><field name="years_active"/><field name="term"/></group><group><field name="featured"/><field name="sequence"/><field name="active"/><field name="sanity_id" readonly="1"/><field name="sanity_updated_at" readonly="1"/></group></group>
+          <group string="Biography"><field name="biography" nolabel="1"/></group>
+        </sheet>
+        <chatter/>
+      </form>
+    </field>
+  </record>
+  <record id="action_team_member" model="ir.actions.act_window">
+    <field name="name">Company Team</field><field name="res_model">cdt.team.member</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_performance_list" model="ir.ui.view">
+    <field name="name">cdt.performance.list</field><field name="model">cdt.performance</field>
+    <field name="arch" type="xml"><list default_order="date desc"><field name="date"/><field name="time"/><field name="title"/><field name="venue"/><field name="status" widget="badge"/><field name="event_id"/><field name="registration_count"/><field name="attendee_count"/><field name="registered_value" sum="Registered value"/><field name="featured"/></list></field>
+  </record>
+  <record id="view_performance_form" model="ir.ui.view">
+    <field name="name">cdt.performance.form</field><field name="model">cdt.performance</field>
+    <field name="arch" type="xml"><form><header><button name="action_sync_event" type="object" string="Open / Sync Odoo Event" class="btn-primary"/></header><sheet><field name="image" widget="image" class="oe_avatar"/><div class="oe_title"><h1><field name="title"/></h1></div><group><group><field name="date"/><field name="time"/><field name="venue"/><field name="location"/><field name="category"/><field name="company_name"/></group><group><field name="status"/><field name="featured"/><field name="ticket_price"/><field name="capacity"/><field name="ticket_url" widget="url"/><field name="learn_more_url" widget="url"/><field name="sanity_id" readonly="1"/></group></group><field name="participating_class_ids" widget="many2many_tags"/><notebook><page string="Ticketing &amp; Attendance"><group><group><field name="event_id"/><field name="ticket_tier_count"/><field name="registration_count"/></group><group><field name="attendee_count"/><field name="seats_available"/><field name="registered_value"/></group></group><p class="text-muted">Ticket tiers, attendee invitations, barcode check-in, and official revenue reporting are managed in the linked Odoo Event.</p></page><page string="Description"><field name="description" nolabel="1"/></page><page string="Source"><group><field name="slug"/><field name="image_alt"/><field name="image_url" widget="url" readonly="1"/><field name="sanity_updated_at" readonly="1"/></group></page></notebook></sheet><chatter/></form></field>
+  </record>
+  <record id="action_performance" model="ir.actions.act_window">
+    <field name="name">Performances</field><field name="res_model">cdt.performance</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_repertoire_list" model="ir.ui.view">
+    <field name="name">cdt.repertoire.item.list</field><field name="model">cdt.repertoire.item</field>
+    <field name="arch" type="xml"><list default_order="year desc,title"><field name="thumbnail" widget="image"/><field name="title"/><field name="year"/><field name="choreographer"/><field name="runtime"/><field name="youtube_id"/><field name="active"/></list></field>
+  </record>
+  <record id="view_repertoire_form" model="ir.ui.view">
+    <field name="name">cdt.repertoire.item.form</field><field name="model">cdt.repertoire.item</field>
+    <field name="arch" type="xml"><form><sheet><field name="thumbnail" widget="image" class="oe_avatar"/><div class="oe_title"><h1><field name="title"/></h1><h2><field name="subtitle"/></h2></div><group><group><field name="slug"/><field name="year"/><field name="runtime"/><field name="choreographer"/><field name="youtube_id"/></group><group><field name="company_premiere"/><field name="world_premiere"/><field name="costume_design"/><field name="lighting"/><field name="premiered_by"/><field name="active"/></group></group><notebook><page string="Description"><field name="description" nolabel="1"/></page><page string="Music"><field name="music" nolabel="1"/></page><page string="Images"><group><field name="hero_image" widget="image"/><field name="thumbnail_url" widget="url" readonly="1"/><field name="hero_image_url" widget="url" readonly="1"/></group></page><page string="Source"><group><field name="sanity_id" readonly="1"/><field name="sanity_updated_at" readonly="1"/><field name="genre"/><field name="style_period"/></group></page></notebook></sheet><chatter/></form></field>
+  </record>
+  <record id="action_repertoire" model="ir.actions.act_window">
+    <field name="name">Repertoire</field><field name="res_model">cdt.repertoire.item</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_media_item_list" model="ir.ui.view">
+    <field name="name">cdt.media.item.list</field><field name="model">cdt.media.item</field>
+    <field name="arch" type="xml"><list><field name="thumbnail" widget="image"/><field name="title"/><field name="video_type"/><field name="category"/><field name="published_at"/><field name="featured"/></list></field>
+  </record>
+  <record id="view_media_item_form" model="ir.ui.view">
+    <field name="name">cdt.media.item.form</field><field name="model">cdt.media.item</field>
+    <field name="arch" type="xml"><form><sheet><field name="thumbnail" widget="image" class="oe_avatar"/><div class="oe_title"><h1><field name="title"/></h1></div><group><group><field name="slug"/><field name="video_type"/><field name="category"/><field name="duration"/><field name="published_at"/></group><group><field name="featured"/><field name="video_url" widget="url"/><field name="vimeo_url" widget="url"/><field name="youtube_url" widget="url"/><field name="active"/></group></group><field name="tags"/><field name="description"/><group string="Source"><field name="sanity_id" readonly="1"/><field name="sanity_updated_at" readonly="1"/><field name="thumbnail_url" widget="url" readonly="1"/></group></sheet></form></field>
+  </record>
+  <record id="action_media_item" model="ir.actions.act_window">
+    <field name="name">Media</field><field name="res_model">cdt.media.item</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_site_setting_list" model="ir.ui.view">
+    <field name="name">cdt.site.setting.list</field><field name="model">cdt.site.setting</field>
+    <field name="arch" type="xml"><list><field name="title"/><field name="sanity_updated_at"/><field name="active"/></list></field>
+  </record>
+  <record id="view_site_setting_form" model="ir.ui.view">
+    <field name="name">cdt.site.setting.form</field><field name="model">cdt.site.setting</field>
+    <field name="arch" type="xml"><form><header><button name="action_sync_sanity" type="object" string="Sync from Sanity" class="btn-primary"/></header><sheet><div class="oe_title"><h1><field name="title"/></h1></div><field name="description"/><group><field name="light_logo" widget="image"/><field name="dark_logo" widget="image"/><field name="hero_image" widget="image"/><field name="home_hero_image" widget="image"/></group><group name="sanity_synchronization" string="Synchronization"><field name="last_sync_at"/><field name="last_sync_status" widget="badge"/><field name="last_sync_message"/></group><group string="Source"><field name="sanity_id" readonly="1"/><field name="sanity_updated_at" readonly="1"/><field name="active"/></group></sheet></form></field>
+  </record>
+  <record id="action_site_setting" model="ir.actions.act_window">
+    <field name="name">Website Settings</field><field name="res_model">cdt.site.setting</field><field name="view_mode">list,form</field>
+  </record>
+
+  <menuitem id="menu_company_content_root" name="Company" parent="cdt_donation.menu_cdt_root" sequence="5" groups="cdt_education.group_education_user"/>
+  <menuitem id="menu_company_performances" name="Performances" parent="menu_company_content_root" action="action_performance" sequence="10"/>
+  <menuitem id="menu_company_repertoire" name="Repertoire" parent="menu_company_content_root" action="action_repertoire" sequence="20"/>
+  <menuitem id="menu_company_team" name="Team" parent="menu_company_content_root" action="action_team_member" sequence="30"/>
+  <menuitem id="menu_company_media" name="Media" parent="menu_company_content_root" action="action_media_item" sequence="40"/>
+  <menuitem id="menu_company_site_settings" name="Website Settings" parent="menu_company_content_root" action="action_site_setting" sequence="50" groups="cdt_education.group_education_manager"/>
+</odoo>

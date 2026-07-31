@@ -1,27 +1,51 @@
 import { Router, type IRouter } from "express";
-import { eq, and, ilike, sql } from "drizzle-orm";
-import { db, studentsTable, classesTable, studentClassesTable } from "@workspace/db";
-import {
-  CreateStudentBody,
-  UpdateStudentBody,
-  ListStudentsQueryParams,
-} from "@workspace/api-zod";
+import { ListStudentsQueryParams } from "@workspace/api-zod";
+import { isOdooConfigured, listOdooEducationStudents } from "../lib/odoo";
 
 const router: IRouter = Router();
 
-async function getEnrolledClassIds(studentId: number): Promise<number[]> {
-  const rows = await db
-    .select({ classId: studentClassesTable.classId })
-    .from(studentClassesTable)
-    .where(eq(studentClassesTable.studentId, studentId));
-  return rows.map((r) => r.classId);
+function requireOdoo(res: import("express").Response): boolean {
+  if (!isOdooConfigured()) {
+    res.status(503).json({
+      error: "Odoo integration not configured",
+      hint: "Set ODOO_URL, ODOO_DB, ODOO_USERNAME, and ODOO_API_KEY.",
+    });
+    return false;
+  }
+  return true;
 }
 
-async function setEnrolledClasses(studentId: number, classIds: number[]): Promise<void> {
-  await db.delete(studentClassesTable).where(eq(studentClassesTable.studentId, studentId));
-  if (classIds.length > 0) {
-    await db.insert(studentClassesTable).values(classIds.map((classId) => ({ studentId, classId })));
-  }
+function odooDateTime(value: string): string {
+  return `${value.replace(" ", "T")}Z`;
+}
+
+function formatStudent(student: Awaited<ReturnType<typeof listOdooEducationStudents>>[number]) {
+  return {
+    id: student.id,
+    studentNumber: student.name,
+    firstName: student.first_name,
+    lastName: student.last_name,
+    contactId: student.contactId,
+    contactName: student.partner_id ? student.partner_id[1] : `${student.first_name} ${student.last_name}`,
+    email: student.email || null,
+    phone: student.phone || null,
+    dateOfBirth: student.date_of_birth || null,
+    status: student.active && student.status === "active" ? "active" : "inactive",
+    academicStatus: student.status,
+    enrolledClassIds: student.classIds,
+    classNames: student.classNames,
+    programName: student.programName,
+    tuitionBilled: student.tuitionBilled,
+    tuitionPaid: student.tuitionPaid,
+    tuitionBalance: student.tuitionBalance,
+    tuitionStatus: student.tuitionStatus,
+    currency: student.currency,
+    guardianName: null,
+    guardianPhone: null,
+    notes: null,
+    sampleData: student.sampleData,
+    createdAt: odooDateTime(student.create_date),
+  };
 }
 
 router.get("/students", async (req, res): Promise<void> => {
@@ -30,150 +54,42 @@ router.get("/students", async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
+  if (!requireOdoo(res)) return;
 
-  const { search, status } = params.data;
-  const conditions = [];
-  if (search) conditions.push(ilike(studentsTable.firstName, `%${search}%`));
-  if (status) conditions.push(eq(studentsTable.status, status));
-
-  const students = await db
-    .select()
-    .from(studentsTable)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(studentsTable.lastName);
-
-  const result = await Promise.all(
-    students.map(async (s) => ({
-      ...s,
-      enrolledClassIds: await getEnrolledClassIds(s.id),
-      dateOfBirth: s.dateOfBirth ?? null,
-      email: s.email ?? null,
-      phone: s.phone ?? null,
-      guardianName: s.guardianName ?? null,
-      guardianPhone: s.guardianPhone ?? null,
-      notes: s.notes ?? null,
-      createdAt: s.createdAt.toISOString(),
-    }))
+  const students = await listOdooEducationStudents(
+    params.data.search?.trim() ?? "",
+    params.data.status ?? undefined,
   );
-
-  res.json(result);
-});
-
-router.post("/students", async (req, res): Promise<void> => {
-  const parsed = CreateStudentBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-
-  const { enrolledClassIds = [], ...studentData } = parsed.data as {
-    enrolledClassIds?: number[];
-    firstName: string;
-    lastName: string;
-    email?: string;
-    phone?: string;
-    dateOfBirth?: string;
-    status?: string;
-    guardianName?: string;
-    guardianPhone?: string;
-    notes?: string;
-  };
-
-  const [student] = await db
-    .insert(studentsTable)
-    .values({
-      firstName: studentData.firstName,
-      lastName: studentData.lastName,
-      email: studentData.email,
-      phone: studentData.phone,
-      dateOfBirth: studentData.dateOfBirth,
-      status: studentData.status ?? "active",
-      guardianName: studentData.guardianName,
-      guardianPhone: studentData.guardianPhone,
-      notes: studentData.notes,
-    })
-    .returning();
-
-  await setEnrolledClasses(student.id, enrolledClassIds);
-
-  res.status(201).json({
-    ...student,
-    enrolledClassIds,
-    createdAt: student.createdAt.toISOString(),
-    email: student.email ?? null,
-    phone: student.phone ?? null,
-    dateOfBirth: student.dateOfBirth ?? null,
-    guardianName: student.guardianName ?? null,
-    guardianPhone: student.guardianPhone ?? null,
-    notes: student.notes ?? null,
-  });
+  const filtered = params.data.classId
+    ? students.filter((student) => student.classIds.includes(params.data.classId as number))
+    : students;
+  res.json(filtered.map(formatStudent));
 });
 
 router.get("/students/:id", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(raw, 10);
-  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-
-  const [student] = await db.select().from(studentsTable).where(eq(studentsTable.id, id));
-  if (!student) { res.status(404).json({ error: "Student not found" }); return; }
-
-  const enrolledClassIds = await getEnrolledClassIds(id);
-  res.json({
-    ...student,
-    enrolledClassIds,
-    createdAt: student.createdAt.toISOString(),
-    email: student.email ?? null,
-    phone: student.phone ?? null,
-    dateOfBirth: student.dateOfBirth ?? null,
-    guardianName: student.guardianName ?? null,
-    guardianPhone: student.guardianPhone ?? null,
-    notes: student.notes ?? null,
-  });
-});
-
-router.patch("/students/:id", async (req, res): Promise<void> => {
-  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(raw, 10);
-  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-
-  const parsed = UpdateStudentBody.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-
-  const { enrolledClassIds, ...rest } = parsed.data as { enrolledClassIds?: number[] } & Record<string, unknown>;
-
-  const [student] = await db
-    .update(studentsTable)
-    .set(rest as Partial<typeof studentsTable.$inferInsert>)
-    .where(eq(studentsTable.id, id))
-    .returning();
-
-  if (!student) { res.status(404).json({ error: "Student not found" }); return; }
-
-  if (enrolledClassIds !== undefined) {
-    await setEnrolledClasses(id, enrolledClassIds);
+  const id = Number(raw);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
   }
+  if (!requireOdoo(res)) return;
+  const student = (await listOdooEducationStudents("", undefined, 1000)).find((item) => item.id === id);
+  if (!student) {
+    res.status(404).json({ error: "Student not found" });
+    return;
+  }
+  res.json(formatStudent(student));
+});
 
-  const classIds = enrolledClassIds ?? (await getEnrolledClassIds(id));
-  res.json({
-    ...student,
-    enrolledClassIds: classIds,
-    createdAt: student.createdAt.toISOString(),
-    email: student.email ?? null,
-    phone: student.phone ?? null,
-    dateOfBirth: student.dateOfBirth ?? null,
-    guardianName: student.guardianName ?? null,
-    guardianPhone: student.guardianPhone ?? null,
-    notes: student.notes ?? null,
+function odooManagedResponse(res: import("express").Response): void {
+  res.status(409).json({
+    error: "Students, class enrollment, and tuition are now managed together in Odoo. Use the Odoo Education workspace for changes so these linked records remain consistent.",
   });
-});
+}
 
-router.delete("/students/:id", async (req, res): Promise<void> => {
-  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const id = parseInt(raw, 10);
-  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-
-  await db.delete(studentsTable).where(eq(studentsTable.id, id));
-  res.sendStatus(204);
-});
+router.post("/students", (_req, res): void => odooManagedResponse(res));
+router.patch("/students/:id", (_req, res): void => odooManagedResponse(res));
+router.delete("/students/:id", (_req, res): void => odooManagedResponse(res));
 
 export default router;

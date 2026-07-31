@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_team_member_user,team.member.user,model_cdt_team_member,cdt_education.group_education_user,1,0,0,0
+access_team_member_manager,team.member.manager,model_cdt_team_member,cdt_education.group_education_manager,1,1,1,1
+access_performance_user,performance.user,model_cdt_performance,cdt_education.group_education_user,1,0,0,0
+access_performance_manager,performance.manager,model_cdt_performance,cdt_education.group_education_manager,1,1,1,1
+access_repertoire_user,repertoire.user,model_cdt_repertoire_item,cdt_education.group_education_user,1,0,0,0
+access_repertoire_manager,repertoire.manager,model_cdt_repertoire_item,cdt_education.group_education_manager,1,1,1,1
+access_site_setting_user,site.setting.user,model_cdt_site_setting,cdt_education.group_education_user,1,0,0,0
+access_site_setting_manager,site.setting.manager,model_cdt_site_setting,cdt_education.group_education_manager,1,1,1,1
+access_media_item_user,media.item.user,model_cdt_media_item,cdt_education.group_education_user,1,0,0,0
+access_media_item_manager,media.item.manager,model_cdt_media_item,cdt_education.group_education_manager,1,1,1,1

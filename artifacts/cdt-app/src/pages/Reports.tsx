@@ -3,25 +3,29 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from 'recharts';
 
 export default function Reports() {
-  const { data: enrollment, isLoading: loadingEnrollment } = useGetEnrollmentReport();
-  const { data: finance, isLoading: loadingFinance } = useGetFinanceReport();
+  const { data: enrollmentResponse, isLoading: loadingEnrollment, isError: enrollmentError } = useGetEnrollmentReport();
+  const { data: financeResponse, isLoading: loadingFinance, isError: financeError } = useGetFinanceReport();
+  const enrollment = Array.isArray(enrollmentResponse) ? enrollmentResponse : [];
+  const finance = Array.isArray(financeResponse) ? financeResponse : [];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-4xl font-extrabold text-primary font-display">Reports & Analytics</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Reports & Analytics</h1>
         <p className="text-muted-foreground mt-1">Visualize school performance and financial health.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="border-none shadow-xl rounded-2xl bg-card">
+        <Card>
           <CardHeader>
-            <CardTitle className="font-display text-2xl text-primary">Enrollment by Class</CardTitle>
+            <CardTitle className="font-display text-base font-semibold text-foreground">Enrollment by Class</CardTitle>
             <CardDescription className="text-base">Current student numbers vs capacity</CardDescription>
           </CardHeader>
           <CardContent>
             {loadingEnrollment ? (
               <div className="h-[350px] flex items-center justify-center animate-pulse text-muted-foreground font-medium">Loading enrollment data...</div>
+            ) : enrollmentError ? (
+              <div className="h-[350px] flex items-center justify-center text-destructive font-medium">Enrollment data could not be loaded.</div>
             ) : (
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -44,14 +48,16 @@ export default function Reports() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-xl rounded-2xl bg-card">
+        <Card>
           <CardHeader>
-            <CardTitle className="font-display text-2xl text-primary">Financial Overview</CardTitle>
+            <CardTitle className="font-display text-base font-semibold text-foreground">Financial Overview</CardTitle>
             <CardDescription className="text-base">Monthly revenue and donations</CardDescription>
           </CardHeader>
           <CardContent>
             {loadingFinance ? (
               <div className="h-[350px] flex items-center justify-center animate-pulse text-muted-foreground font-medium">Loading financial data...</div>
+            ) : financeError ? (
+              <div className="h-[350px] flex items-center justify-center px-6 text-center text-amber-900 font-medium">Odoo finance data is unavailable. Check the integration settings.</div>
             ) : (
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">

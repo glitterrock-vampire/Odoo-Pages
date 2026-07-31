@@ -11,7 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Donations() {
   const [search, setSearch] = useState("");
-  const { data: donations, isLoading } = useListDonations({ search: search || undefined });
+  const { data: donationsResponse, isLoading, isError } = useListDonations({ search: search || undefined });
+  const donations = Array.isArray(donationsResponse) ? donationsResponse : [];
   const { toast } = useToast();
 
   const getStatusColor = (status: string) => {
@@ -32,21 +33,21 @@ export default function Donations() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold text-primary font-display">Donations</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground md:text-3xl">Donations</h1>
           <p className="text-muted-foreground mt-1">Track and manage community contributions.</p>
         </div>
-        <Button className="gap-2 rounded-full font-bold shadow-md bg-secondary text-secondary-foreground hover:bg-secondary/90" onClick={handleAdd}>
+        <Button className="gap-2" onClick={handleAdd}>
           <Plus className="w-4 h-4" /> Add Donation
         </Button>
       </div>
 
-      <Card className="shadow-xl border-none rounded-2xl overflow-hidden bg-card">
+      <Card className="overflow-hidden">
         <div className="p-4 border-b border-border bg-muted/10">
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Search by donor name..." 
-              className="pl-9 rounded-xl bg-background border-muted shadow-sm focus-visible:ring-secondary"
+              className="pl-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -66,13 +67,15 @@ export default function Donations() {
             <TableBody>
               {isLoading ? (
                 <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground font-medium animate-pulse">Loading donations...</TableCell></TableRow>
-              ) : donations?.length === 0 ? (
+              ) : isError ? (
+                <TableRow><TableCell colSpan={5} className="text-center py-12 text-destructive font-medium">Odoo donations could not be loaded. Check the local Odoo service and CDT Donations add-on.</TableCell></TableRow>
+              ) : donations.length === 0 ? (
                 <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground font-medium flex flex-col items-center justify-center">
                   <Heart className="w-8 h-8 text-muted-foreground/30 mb-2" />
                   No donations found.
                 </TableCell></TableRow>
               ) : (
-                donations?.map(donation => (
+                donations.map(donation => (
                   <TableRow key={donation.id} className="group transition-colors hover:bg-muted/20">
                     <TableCell>
                       <div className="font-bold text-primary">{donation.donorName}</div>
@@ -82,7 +85,7 @@ export default function Donations() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-lg font-black font-display text-primary">
+                      <div className="font-display text-lg font-semibold text-primary">
                         {donation.currency} {donation.amount.toLocaleString()}
                       </div>
                     </TableCell>
@@ -95,8 +98,8 @@ export default function Donations() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-secondary hover:bg-secondary/10" onClick={() => toast({ title: "Edit clicked" })}>
+                      <div className="flex justify-end gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+                        <Button aria-label={`Edit donation from ${donation.donorName}`} variant="ghost" size="icon" className="text-primary hover:bg-secondary/60" onClick={() => toast({ title: "Edit clicked" })}>
                           <Edit2 className="w-4 h-4" />
                         </Button>
                       </div>

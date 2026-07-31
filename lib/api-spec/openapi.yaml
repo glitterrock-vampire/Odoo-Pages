@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Api
   version: 0.1.0
-  description: CDT Jamaica Management API with Odoo integration
+  description: CDT Jamaica Management API with Odoo Community integration
 servers:
   - url: /api
     description: Base API path
@@ -21,12 +21,16 @@ tags:
     description: Donation tracking via Odoo
   - name: finances
     description: Financial data from Odoo
+  - name: tuition
+    description: Read-only student fee and tuition balances from Odoo
   - name: performances
     description: Performance event management
   - name: tasks
     description: Tasks synced from Odoo
   - name: reports
     description: Reporting and analytics
+  - name: content
+    description: Read-only website content mirrored from Sanity into Odoo
 
 paths:
   /healthz:
@@ -88,7 +92,8 @@ paths:
     post:
       operationId: createStudent
       tags: [students]
-      summary: Create a new student
+      summary: Legacy student creation endpoint; linked records are managed in Odoo
+      deprecated: true
       requestBody:
         required: true
         content:
@@ -102,6 +107,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Student"
+        "409":
+          description: Student and enrollment changes must be made in Odoo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /students/{id}:
     get:
@@ -130,7 +141,8 @@ paths:
     patch:
       operationId: updateStudent
       tags: [students]
-      summary: Update a student
+      summary: Legacy student update endpoint; linked records are managed in Odoo
+      deprecated: true
       parameters:
         - in: path
           name: id
@@ -150,10 +162,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Student"
+        "409":
+          description: Student and enrollment changes must be made in Odoo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       operationId: deleteStudent
       tags: [students]
-      summary: Delete a student
+      summary: Legacy student deletion endpoint; linked records are managed in Odoo
+      deprecated: true
       parameters:
         - in: path
           name: id
@@ -163,6 +182,12 @@ paths:
       responses:
         "204":
           description: Deleted
+        "409":
+          description: Student and enrollment changes must be made in Odoo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   # ── Classes ────────────────────────────────────────────────────────────────
   /classes:
@@ -187,7 +212,8 @@ paths:
     post:
       operationId: createClass
       tags: [classes]
-      summary: Create a new class
+      summary: Legacy class creation endpoint; linked records are managed in Odoo
+      deprecated: true
       requestBody:
         required: true
         content:
@@ -201,6 +227,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DanceClass"
+        "409":
+          description: Class and enrollment changes must be made in Odoo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /classes/{id}:
     get:
@@ -229,7 +261,8 @@ paths:
     patch:
       operationId: updateClass
       tags: [classes]
-      summary: Update a class
+      summary: Legacy class update endpoint; linked records are managed in Odoo
+      deprecated: true
       parameters:
         - in: path
           name: id
@@ -249,10 +282,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DanceClass"
+        "409":
+          description: Class and enrollment changes must be made in Odoo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       operationId: deleteClass
       tags: [classes]
-      summary: Delete a class
+      summary: Legacy class deletion endpoint; linked records are managed in Odoo
+      deprecated: true
       parameters:
         - in: path
           name: id
@@ -262,8 +302,14 @@ paths:
       responses:
         "204":
           description: Deleted
+        "409":
+          description: Class and enrollment changes must be made in Odoo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  # ── Contacts (Odoo) ────────────────────────────────────────────────────────
+  # ── Contacts (Odoo) ─────────────────────────────────────────────────────
   /contacts:
     get:
       operationId: listContacts
@@ -316,7 +362,7 @@ paths:
           name: id
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Contact
@@ -339,7 +385,7 @@ paths:
           name: id
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -353,8 +399,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Contact"
+        "400":
+          description: Invalid contact update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Attempted to change a public profile field still managed by Sanity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  # ── Donations (Odoo) ───────────────────────────────────────────────────────
+  # ── Donations (Odoo) ────────────────────────────────────────────────────
   /donations:
     get:
       operationId: listDonations
@@ -407,7 +465,7 @@ paths:
           name: id
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Donation
@@ -422,7 +480,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  # ── Finances (Odoo) ────────────────────────────────────────────────────────
+  # ── Finances (Odoo) ─────────────────────────────────────────────────────
   /finances/invoices:
     get:
       operationId: listInvoices
@@ -460,6 +518,38 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FinancialSummary"
+
+  # ── Tuition and student fees (Odoo) ─────────────────────────────────────
+  /tuition/fees:
+    get:
+      operationId: listTuitionFees
+      tags: [tuition]
+      summary: List student tuition and fee balances from Odoo
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: ["string", "null"]
+            enum: [draft, due, partial, paid, cancelled, null]
+      responses:
+        "200":
+          description: Student tuition fee ledger
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TuitionFee"
+        "503":
+          description: Odoo integration is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   # ── Performances ───────────────────────────────────────────────────────────
   /performances:
@@ -550,6 +640,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Performance"
+        "409":
+          description: Sanity-managed performance fields are read-only until cutover
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       operationId: deletePerformance
       tags: [performances]
@@ -563,8 +659,14 @@ paths:
       responses:
         "204":
           description: Deleted
+        "409":
+          description: Sanity-managed performances cannot be deleted until cutover
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
-  # ── Tasks (Odoo) ───────────────────────────────────────────────────────────
+  # ── Tasks (Odoo) ────────────────────────────────────────────────────────
   /tasks:
     get:
       operationId: listTasks
@@ -617,7 +719,7 @@ paths:
           name: id
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -640,7 +742,7 @@ paths:
           name: id
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "204":
           description: Deleted
@@ -681,6 +783,86 @@ paths:
                 items:
                   $ref: "#/components/schemas/MonthlyRevenue"
 
+  # ── Website content mirror ───────────────────────────────────────────────
+  /content/team:
+    get:
+      operationId: listTeamMembers
+      tags: [content]
+      summary: List website team members mirrored into Odoo
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Team members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamMember"
+
+  /content/repertoire:
+    get:
+      operationId: listRepertoireItems
+      tags: [content]
+      summary: List repertoire mirrored into Odoo
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Repertoire items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RepertoireItem"
+
+  /content/media:
+    get:
+      operationId: listMediaItems
+      tags: [content]
+      summary: List website media mirrored into Odoo
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Media items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MediaItem"
+
+  /content/website-settings:
+    get:
+      operationId: getWebsiteSettings
+      tags: [content]
+      summary: Get mirrored website settings and sync status
+      responses:
+        "200":
+          description: Website settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebsiteSetting"
+        "404":
+          description: Website settings not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -706,25 +888,73 @@ components:
           type: integer
         upcomingPerformances:
           type: integer
+        odooConfigured:
+          type: boolean
         totalDonations:
-          type: number
+          type: ["number", "null"]
         openTasks:
-          type: integer
+          type: ["integer", "null"]
         monthlyRevenue:
-          type: number
+          type: ["number", "null"]
         pendingInvoices:
-          type: integer
+          type: ["integer", "null"]
         newContactsThisMonth:
-          type: integer
+          type: ["integer", "null"]
+        feesBilled:
+          type: ["number", "null"]
+        feesCollected:
+          type: ["number", "null"]
+        feesOutstanding:
+          type: ["number", "null"]
+        unbilledFees:
+          type: ["number", "null"]
+        overdueFeesCount:
+          type: ["integer", "null"]
+        currency:
+          type: string
+        paymentProviderName:
+          type: ["string", "null"]
+        paymentProviderState:
+          type: ["string", "null"]
+        paymentJournalName:
+          type: ["string", "null"]
+        teamMembers:
+          type: ["integer", "null"]
+        repertoireItems:
+          type: ["integer", "null"]
+        totalPerformances:
+          type: ["integer", "null"]
+        mediaItems:
+          type: ["integer", "null"]
+        contentLastSyncAt:
+          type: ["string", "null"]
+        contentSyncStatus:
+          type: ["string", "null"]
       required:
         - totalStudents
         - activeClasses
         - upcomingPerformances
+        - odooConfigured
         - totalDonations
         - openTasks
         - monthlyRevenue
         - pendingInvoices
         - newContactsThisMonth
+        - feesBilled
+        - feesCollected
+        - feesOutstanding
+        - unbilledFees
+        - overdueFeesCount
+        - currency
+        - paymentProviderName
+        - paymentProviderState
+        - paymentJournalName
+        - teamMembers
+        - repertoireItems
+        - totalPerformances
+        - mediaItems
+        - contentLastSyncAt
+        - contentSyncStatus
 
     # ── Student ────────────────────────────────────────────────────────────
     Student:
@@ -757,7 +987,34 @@ components:
           type: ["string", "null"]
         createdAt:
           type: string
-      required: [id, firstName, lastName, status, enrolledClassIds, createdAt]
+        studentNumber:
+          type: string
+        contactId:
+          type: ["integer", "null"]
+        contactName:
+          type: string
+        academicStatus:
+          type: string
+        classNames:
+          type: array
+          items:
+            type: string
+        programName:
+          type: ["string", "null"]
+        tuitionBilled:
+          type: number
+        tuitionPaid:
+          type: number
+        tuitionBalance:
+          type: number
+        tuitionStatus:
+          type: ["string", "null"]
+          enum: [draft, due, partial, paid, cancelled, null]
+        currency:
+          type: string
+        sampleData:
+          type: boolean
+      required: [id, firstName, lastName, status, enrolledClassIds, createdAt, studentNumber, contactId, contactName, academicStatus, classNames, programName, tuitionBilled, tuitionPaid, tuitionBalance, tuitionStatus, currency, sampleData]
 
     StudentInput:
       type: object
@@ -845,7 +1102,27 @@ components:
           type: ["number", "null"]
         createdAt:
           type: string
-      required: [id, name, style, instructor, schedule, location, capacity, enrolledCount, status, createdAt]
+        classStatus:
+          type: string
+        academicYear:
+          type: ["string", "null"]
+        academicTerm:
+          type: ["string", "null"]
+        deliveryMode:
+          type: string
+        studentIds:
+          type: array
+          items:
+            type: integer
+        studentNames:
+          type: array
+          items:
+            type: string
+        currency:
+          type: string
+        sampleData:
+          type: boolean
+      required: [id, name, style, instructor, schedule, location, capacity, enrolledCount, status, createdAt, classStatus, academicYear, academicTerm, deliveryMode, studentIds, studentNames, currency, sampleData]
 
     ClassInput:
       type: object
@@ -903,7 +1180,7 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
         name:
           type: string
         email:
@@ -922,16 +1199,20 @@ components:
         country:
           type: ["string", "null"]
         odooId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         createdAt:
           type: string
-      required: [id, name, type, createdAt]
+        managedBySanity:
+          type: boolean
+          description: Whether public profile identity fields are still managed by the Sanity compatibility sync.
+      required: [id, name, type, createdAt, managedBySanity]
 
     ContactInput:
       type: object
       properties:
         name:
           type: string
+          minLength: 1
         email:
           type: string
         phone:
@@ -951,9 +1232,11 @@ components:
 
     ContactUpdate:
       type: object
+      minProperties: 1
       properties:
         name:
           type: string
+          minLength: 1
         email:
           type: string
         phone:
@@ -975,7 +1258,7 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
         donorName:
           type: string
         amount:
@@ -992,7 +1275,7 @@ components:
         notes:
           type: ["string", "null"]
         odooId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
       required: [id, donorName, amount, currency, date, status]
 
     DonationInput:
@@ -1015,12 +1298,92 @@ components:
           type: string
       required: [donorName, amount, date]
 
+    # ── Tuition fee ────────────────────────────────────────────────────────
+    TuitionFee:
+      type: object
+      properties:
+        id:
+          type: integer
+        reference:
+          type: string
+        studentId:
+          type: integer
+        studentName:
+          type: string
+        feeSchedule:
+          type: ["string", "null"]
+        feeStructure:
+          type: string
+        dueDate:
+          type: string
+          format: date
+        amount:
+          type: number
+        amountPaid:
+          type: number
+        balance:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [draft, due, partial, paid, cancelled]
+        overdue:
+          type: boolean
+        invoiceId:
+          type: ["integer", "null"]
+        invoiceName:
+          type: ["string", "null"]
+        invoiceState:
+          type: ["string", "null"]
+          enum: [draft, posted, cancelled, null]
+        paymentState:
+          type: ["string", "null"]
+          enum: [not_paid, in_payment, paid, partial, reversed, null]
+        contactId:
+          type: ["integer", "null"]
+        programName:
+          type: ["string", "null"]
+        classIds:
+          type: array
+          items:
+            type: integer
+        classNames:
+          type: array
+          items:
+            type: string
+        sampleData:
+          type: boolean
+      required:
+        - id
+        - reference
+        - studentId
+        - studentName
+        - feeSchedule
+        - feeStructure
+        - dueDate
+        - amount
+        - amountPaid
+        - balance
+        - currency
+        - status
+        - overdue
+        - invoiceId
+        - invoiceName
+        - invoiceState
+        - paymentState
+        - contactId
+        - programName
+        - classIds
+        - classNames
+        - sampleData
+
     # ── Invoice ────────────────────────────────────────────────────────────
     Invoice:
       type: object
       properties:
         id:
-          type: integer
+          type: string
         name:
           type: string
         partnerName:
@@ -1042,7 +1405,7 @@ components:
           type: string
           enum: [not_paid, in_payment, paid, partial, reversed, null]
         odooId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
       required: [id, name, partnerName, amountTotal, amountDue, currency, state, paymentState]
 
     FinancialSummary:
@@ -1061,6 +1424,135 @@ components:
         currency:
           type: string
       required: [totalRevenue, totalOutstanding, totalPaid, overdueCount, draftCount, currency]
+
+    # ── Website content mirror ────────────────────────────────────────────
+    TeamMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        memberType:
+          type: string
+          enum: [dancer, management, board]
+        role:
+          type: ["string", "null"]
+        yearsActive:
+          type: ["string", "null"]
+        term:
+          type: ["string", "null"]
+        featured:
+          type: boolean
+        sequence:
+          type: integer
+        headshotUrl:
+          type: ["string", "null"]
+        sourceUpdatedAt:
+          type: ["string", "null"]
+        managedBySanity:
+          type: boolean
+      required: [id, name, memberType, featured, sequence, managedBySanity]
+
+    RepertoireItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        subtitle:
+          type: ["string", "null"]
+        slug:
+          type: string
+        year:
+          type: integer
+        runtime:
+          type: ["string", "null"]
+        choreographer:
+          type: ["string", "null"]
+        genre:
+          type: ["string", "null"]
+        stylePeriod:
+          type: ["string", "null"]
+        youtubeId:
+          type: ["string", "null"]
+        thumbnailUrl:
+          type: ["string", "null"]
+        heroImageUrl:
+          type: ["string", "null"]
+        sourceUpdatedAt:
+          type: ["string", "null"]
+        managedBySanity:
+          type: boolean
+      required: [id, title, slug, year, managedBySanity]
+
+    MediaItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        slug:
+          type: ["string", "null"]
+        videoType:
+          type: ["string", "null"]
+        duration:
+          type: ["string", "null"]
+        publishedAt:
+          type: ["string", "null"]
+        featured:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+        category:
+          type: ["string", "null"]
+        videoUrl:
+          type: ["string", "null"]
+        vimeoUrl:
+          type: ["string", "null"]
+        youtubeUrl:
+          type: ["string", "null"]
+        thumbnailUrl:
+          type: ["string", "null"]
+        sourceUpdatedAt:
+          type: ["string", "null"]
+        managedBySanity:
+          type: boolean
+      required: [id, title, featured, tags, managedBySanity]
+
+    WebsiteSetting:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        lightLogoUrl:
+          type: ["string", "null"]
+        darkLogoUrl:
+          type: ["string", "null"]
+        heroImageUrl:
+          type: ["string", "null"]
+        homeHeroImageUrl:
+          type: ["string", "null"]
+        lastSyncAt:
+          type: ["string", "null"]
+        lastSyncStatus:
+          type: ["string", "null"]
+          enum: [success, failed, null]
+        lastSyncMessage:
+          type: ["string", "null"]
+        sourceUpdatedAt:
+          type: ["string", "null"]
+        managedBySanity:
+          type: boolean
+      required: [id, title, managedBySanity]
 
     # ── Performance ────────────────────────────────────────────────────────
     Performance:
@@ -1091,7 +1583,9 @@ components:
           type: ["integer", "null"]
         createdAt:
           type: string
-      required: [id, title, date, venue, status, participatingClassIds, createdAt]
+        managedBySanity:
+          type: boolean
+      required: [id, title, date, venue, status, participatingClassIds, createdAt, managedBySanity]
 
     PerformanceInput:
       type: object
@@ -1149,7 +1643,7 @@ components:
       type: object
       properties:
         id:
-          type: integer
+          type: string
         title:
           type: string
         description:
@@ -1167,7 +1661,7 @@ components:
         projectName:
           type: ["string", "null"]
         odooId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         createdAt:
           type: string
       required: [id, title, stage, priority, createdAt]
