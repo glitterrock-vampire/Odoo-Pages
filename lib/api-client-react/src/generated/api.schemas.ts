@@ -864,9 +864,38 @@ export interface EnrollmentStat {
 
 export interface MonthlyRevenue {
   month: string;
+  /**
+     * Backward-compatible alias for billed invoice total
+     * @deprecated
+     */
   revenue: number;
+  billed: number;
+  collected: number;
+  outstanding: number;
   invoiceCount: number;
   donations: number;
+  currency: string;
+}
+
+export interface SchoolSettings {
+  institutionId: number;
+  institutionName: string;
+  outgoingMailConfigured: boolean;
+  attendanceNotificationsEnabled: boolean;
+  automaticFeeRemindersEnabled: boolean;
+  /** @minimum 0 */
+  feeReminderDelayDays: number;
+  /** @minimum 1 */
+  feeReminderRepeatDays: number;
+}
+
+export interface SchoolSettingsUpdate {
+  attendanceNotificationsEnabled?: boolean;
+  automaticFeeRemindersEnabled?: boolean;
+  /** @minimum 0 */
+  feeReminderDelayDays?: number;
+  /** @minimum 1 */
+  feeReminderRepeatDays?: number;
 }
 
 export type ListStudentsParams = {

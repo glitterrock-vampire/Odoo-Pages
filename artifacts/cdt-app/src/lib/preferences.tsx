@@ -1,12 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 export interface AppPreferences {
-  emailNotifications: boolean;
   automaticOdooRefresh: boolean;
   compactView: boolean;
 }
 export const defaultPreferences: AppPreferences = {
-  emailNotifications: true,
   automaticOdooRefresh: true,
   compactView: false,
 };
@@ -25,7 +23,14 @@ export function getStoredPreferences(): AppPreferences {
     if (!storedValue) return defaultPreferences;
     const parsedValue: unknown = JSON.parse(storedValue);
     if (!isPreferences(parsedValue)) return defaultPreferences;
-    return { ...defaultPreferences, ...parsedValue };
+    return {
+      automaticOdooRefresh: typeof parsedValue.automaticOdooRefresh === 'boolean'
+        ? parsedValue.automaticOdooRefresh
+        : defaultPreferences.automaticOdooRefresh,
+      compactView: typeof parsedValue.compactView === 'boolean'
+        ? parsedValue.compactView
+        : defaultPreferences.compactView,
+    };
   } catch {
     return defaultPreferences;
   }

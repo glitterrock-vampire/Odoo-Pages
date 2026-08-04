@@ -54,6 +54,8 @@ import type {
   PerformanceInput,
   PerformanceUpdate,
   RepertoireItem,
+  SchoolSettings,
+  SchoolSettingsUpdate,
   Student,
   StudentInput,
   StudentUpdate,
@@ -2707,6 +2709,154 @@ export function useGetFinanceReport<TData = Awaited<ReturnType<typeof getFinance
 
 
 
+
+export const getGetSchoolSettingsUrl = () => {
+
+
+
+
+  return `/api/school-settings`
+}
+
+/**
+ * @summary Get Odoo school automation settings
+ */
+export const getSchoolSettings = async ( options?: RequestInit): Promise<SchoolSettings> => {
+
+  return customFetch<SchoolSettings>(getGetSchoolSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSchoolSettingsQueryKey = () => {
+    return [
+    `/api/school-settings`
+    ] as const;
+    }
+
+
+export const getGetSchoolSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getSchoolSettings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSchoolSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSchoolSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSchoolSettings>>> = ({ signal }) => getSchoolSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSchoolSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSchoolSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getSchoolSettings>>>
+export type GetSchoolSettingsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get Odoo school automation settings
+ */
+
+export function useGetSchoolSettings<TData = Awaited<ReturnType<typeof getSchoolSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSchoolSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSchoolSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateSchoolSettingsUrl = () => {
+
+
+
+
+  return `/api/school-settings`
+}
+
+/**
+ * @summary Update Odoo school automation settings
+ */
+export const updateSchoolSettings = async (schoolSettingsUpdate: SchoolSettingsUpdate, options?: RequestInit): Promise<SchoolSettings> => {
+
+  return customFetch<SchoolSettings>(getUpdateSchoolSettingsUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(schoolSettingsUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateSchoolSettingsMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSchoolSettings>>, TError,{data: BodyType<SchoolSettingsUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSchoolSettings>>, TError,{data: BodyType<SchoolSettingsUpdate>}, TContext> => {
+
+const mutationKey = ['updateSchoolSettings'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSchoolSettings>>, {data: BodyType<SchoolSettingsUpdate>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateSchoolSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSchoolSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateSchoolSettings>>>
+    export type UpdateSchoolSettingsMutationBody = BodyType<SchoolSettingsUpdate>
+    export type UpdateSchoolSettingsMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Update Odoo school automation settings
+ */
+export const useUpdateSchoolSettings = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSchoolSettings>>, TError,{data: BodyType<SchoolSettingsUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSchoolSettings>>,
+        TError,
+        {data: BodyType<SchoolSettingsUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateSchoolSettingsMutationOptions(options));
+    }
 
 export const getListTeamMembersUrl = (params?: ListTeamMembersParams,) => {
   const normalizedParams = new URLSearchParams();

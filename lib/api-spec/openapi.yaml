@@ -30,6 +30,7 @@ tags:
   - name: tasks
     description: Tasks synced from Odoo
   - name: reports
+  - name: settings
     description: Reporting and analytics
   - name: content
     description: Read-only website content mirrored from Sanity into Odoo
@@ -815,6 +816,42 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/MonthlyRevenue"
+
+  /school-settings:
+    get:
+      operationId: getSchoolSettings
+      tags: [settings]
+      summary: Get Odoo school automation settings
+      responses:
+        "200":
+          description: School settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchoolSettings"
+    patch:
+      operationId: updateSchoolSettings
+      tags: [settings]
+      summary: Update Odoo school automation settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchoolSettingsUpdate"
+      responses:
+        "200":
+          description: Updated school settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchoolSettings"
+        "409":
+          description: Outgoing mail must be configured before enabling notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   # ── Website content mirror ───────────────────────────────────────────────
   /content/team:
@@ -1894,8 +1931,53 @@ components:
           type: string
         revenue:
           type: number
+          deprecated: true
+          description: Backward-compatible alias for billed invoice total
+        billed:
+          type: number
+        collected:
+          type: number
+        outstanding:
+          type: number
         invoiceCount:
           type: integer
         donations:
           type: number
-      required: [month, revenue, invoiceCount, donations]
+        currency:
+          type: string
+      required: [month, revenue, billed, collected, outstanding, invoiceCount, donations, currency]
+
+    SchoolSettings:
+      type: object
+      properties:
+        institutionId:
+          type: integer
+        institutionName:
+          type: string
+        outgoingMailConfigured:
+          type: boolean
+        attendanceNotificationsEnabled:
+          type: boolean
+        automaticFeeRemindersEnabled:
+          type: boolean
+        feeReminderDelayDays:
+          type: integer
+          minimum: 0
+        feeReminderRepeatDays:
+          type: integer
+          minimum: 1
+      required: [institutionId, institutionName, outgoingMailConfigured, attendanceNotificationsEnabled, automaticFeeRemindersEnabled, feeReminderDelayDays, feeReminderRepeatDays]
+
+    SchoolSettingsUpdate:
+      type: object
+      properties:
+        attendanceNotificationsEnabled:
+          type: boolean
+        automaticFeeRemindersEnabled:
+          type: boolean
+        feeReminderDelayDays:
+          type: integer
+          minimum: 0
+        feeReminderRepeatDays:
+          type: integer
+          minimum: 1

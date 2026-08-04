@@ -13,6 +13,16 @@ export function getOdooPublicUrl(): string {
   return (process.env.ODOO_PUBLIC_URL ?? ODOO_URL).replace(/\/$/, "");
 }
 
+export interface OdooSchoolAutomationSettings {
+  institutionId: number;
+  institutionName: string;
+  outgoingMailConfigured: boolean;
+  attendanceNotificationsEnabled: boolean;
+  automaticFeeRemindersEnabled: boolean;
+  feeReminderDelayDays: number;
+  feeReminderRepeatDays: number;
+}
+
 interface OdooRpcError {
   message?: string;
   data?: { message?: string; debug?: string };
@@ -87,6 +97,79 @@ async function callOdoo<T>(
     args,
     kwargs,
   ]);
+}
+
+interface OdooInstitutionAutomationRecord {
+  id: number;
+  name: string;
+  attendance_notifications_enabled: boolean;
+  automatic_fee_reminders_enabled: boolean;
+  fee_reminder_delay_days: number;
+  fee_reminder_repeat_days: number;
+}
+
+const INSTITUTION_AUTOMATION_FIELDS = [
+  "id",
+  "name",
+  "attendance_notifications_enabled",
+  "automatic_fee_reminders_enabled",
+  "fee_reminder_delay_days",
+  "fee_reminder_repeat_days",
+];
+
+export async function getOdooSchoolAutomationSettings(): Promise<OdooSchoolAutomationSettings> {
+  const [institutions, outgoingMailServers] = await Promise.all([
+    callOdoo<OdooInstitutionAutomationRecord[]>("cdt.education.institution", "search_read", [[
+      ["active", "=", true],
+    ]], {
+      fields: INSTITUTION_AUTOMATION_FIELDS,
+      order: "id asc",
+      limit: 1,
+    }),
+    callOdoo<number>("ir.mail_server", "search_count", [[
+      ["active", "=", true],
+    ]]),
+  ]);
+  const institution = institutions[0];
+  if (!institution) throw new Error("No active education institution is configured in Odoo.");
+  return {
+    institutionId: institution.id,
+    institutionName: institution.name,
+    outgoingMailConfigured: outgoingMailServers > 0,
+    attendanceNotificationsEnabled: institution.attendance_notifications_enabled,
+    automaticFeeRemindersEnabled: institution.automatic_fee_reminders_enabled,
+    feeReminderDelayDays: institution.fee_reminder_delay_days,
+    feeReminderRepeatDays: institution.fee_reminder_repeat_days,
+  };
+}
+
+export async function updateOdooSchoolAutomationSettings(
+  data: Partial<Pick<
+    OdooSchoolAutomationSettings,
+    | "attendanceNotificationsEnabled"
+    | "automaticFeeRemindersEnabled"
+    | "feeReminderDelayDays"
+    | "feeReminderRepeatDays"
+  >>,
+): Promise<OdooSchoolAutomationSettings> {
+  const current = await getOdooSchoolAutomationSettings();
+  const values: Record<string, unknown> = {};
+  if (data.attendanceNotificationsEnabled !== undefined) {
+    values.attendance_notifications_enabled = data.attendanceNotificationsEnabled;
+  }
+  if (data.automaticFeeRemindersEnabled !== undefined) {
+    values.automatic_fee_reminders_enabled = data.automaticFeeRemindersEnabled;
+  }
+  if (data.feeReminderDelayDays !== undefined) {
+    values.fee_reminder_delay_days = data.feeReminderDelayDays;
+  }
+  if (data.feeReminderRepeatDays !== undefined) {
+    values.fee_reminder_repeat_days = data.feeReminderRepeatDays;
+  }
+  if (Object.keys(values).length > 0) {
+    await callOdoo<boolean>("cdt.education.institution", "write", [[current.institutionId], values]);
+  }
+  return getOdooSchoolAutomationSettings();
 }
 
 type Many2One = [number, string] | false;
@@ -1306,6 +1389,7 @@ const TASK_FIELDS = [
   "id", "name", "description", "stage_id", "user_ids", "date_deadline",
   "priority", "project_id", "create_date",
 ];
+const DEFAULT_TASK_PROJECT_NAME = "CDT School Operations";
 
 async function hydrateTaskAssignees(tasks: OdooTask[]): Promise<OdooTask[]> {
   const userIds = [...new Set(tasks.flatMap((task) => task.user_ids))];
@@ -1339,21 +1423,28 @@ async function taskValues(data: {
   deadline?: string;
   priority?: string;
   projectName?: string;
-}): Promise<Record<string, unknown>> {
+}, ensureProject = false): Promise<Record<string, unknown>> {
   const values: Record<string, unknown> = {};
   if (data.title !== undefined) values.name = data.title;
   if (data.description !== undefined) values.description = data.description;
   if (data.deadline !== undefined) values.date_deadline = data.deadline || false;
-  if (data.priority !== undefined) values.priority = ({ low: "0", normal: "1", high: "2" } as Record<string, string>)[data.priority] ?? "1";
+  if (data.priority !== undefined) values.priority = ({ low: "0", normal: "0", high: "1" } as Record<string, string>)[data.priority] ?? "0";
 
-  const projectId = await findOrCreateNamedRecord("project.project", data.projectName);
-  if (projectId) values.project_id = projectId;
+  if (data.projectName !== undefined || ensureProject) {
+    const projectName = data.projectName?.trim() || DEFAULT_TASK_PROJECT_NAME;
+    values.project_id = await findOrCreateNamedRecord("project.project", projectName);
+  }
 
-  if (data.assigneeName) {
-    const ids = await callOdoo<number[]>("res.users", "search", [[
-      ["name", "=ilike", data.assigneeName],
-    ]], { limit: 1 });
-    if (ids[0]) values.user_ids = [[6, 0, [ids[0]]]];
+  if (data.assigneeName !== undefined) {
+    const ids = data.assigneeName
+      ? await callOdoo<number[]>("res.users", "search", [[
+          ["name", "=ilike", data.assigneeName],
+        ]], { limit: 1 })
+      : [];
+    if (data.assigneeName && !ids[0]) {
+      throw new Error(`No active Odoo user matches assignee “${data.assigneeName}”.`);
+    }
+    values.user_ids = [[6, 0, ids[0] ? [ids[0]] : []]];
   }
 
   if (data.stage) {
@@ -1364,13 +1455,17 @@ async function taskValues(data: {
 }
 
 export async function createOdooTask(data: Parameters<typeof taskValues>[0]): Promise<OdooTask> {
-  const id = await callOdoo<number>("project.task", "create", [await taskValues(data)]);
+  const id = await callOdoo<number>("project.task", "create", [await taskValues(data, true)]);
   const tasks = await callOdoo<OdooTask[]>("project.task", "read", [[id]], { fields: TASK_FIELDS });
   return (await hydrateTaskAssignees(tasks))[0];
 }
 
 export async function updateOdooTask(id: number, data: Parameters<typeof taskValues>[0]): Promise<OdooTask> {
-  await callOdoo<boolean>("project.task", "write", [[id], await taskValues(data)]);
+  const current = await callOdoo<Array<Pick<OdooTask, "project_id">>>("project.task", "read", [[id]], {
+    fields: ["project_id"],
+  });
+  const ensureProject = data.projectName !== undefined || Boolean(data.stage && !current[0]?.project_id);
+  await callOdoo<boolean>("project.task", "write", [[id], await taskValues(data, ensureProject)]);
   const tasks = await callOdoo<OdooTask[]>("project.task", "read", [[id]], { fields: TASK_FIELDS });
   return (await hydrateTaskAssignees(tasks))[0];
 }

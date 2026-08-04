@@ -8,7 +8,15 @@
 
 export interface MonthlyRevenue {
   month: string;
+  /**
+     * Backward-compatible alias for billed invoice total
+     * @deprecated
+     */
   revenue: number;
+  billed: number;
+  collected: number;
+  outstanding: number;
   invoiceCount: number;
   donations: number;
+  currency: string;
 }

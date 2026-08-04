@@ -23,7 +23,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "127.0.0.1:8069:8069"
+      - "0.0.0.0:8069:8069"
     environment:
       HOST: db
       PORT: 5432

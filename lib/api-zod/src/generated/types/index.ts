@@ -65,6 +65,8 @@ export * from './performanceStatus';
 export * from './performanceUpdate';
 export * from './performanceUpdateStatus';
 export * from './repertoireItem';
+export * from './schoolSettings';
+export * from './schoolSettingsUpdate';
 export * from './student';
 export * from './studentInput';
 export * from './studentInputStatus';

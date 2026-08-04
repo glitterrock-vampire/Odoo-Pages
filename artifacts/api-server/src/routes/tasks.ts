@@ -29,16 +29,31 @@ const STAGE_MAP: Record<string, string> = {
   Cancelled: "cancelled",
 };
 
-const PRIORITY_MAP: Record<string, string> = { "0": "low", "1": "normal", "2": "high", "3": "high" };
+const PRIORITY_MAP: Record<string, string> = { "0": "normal", "1": "high" };
+
+function plainTextDescription(value: string | false): string | null {
+  if (!value) return null;
+  return value
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .trim();
+}
 
 function formatTask(task: OdooTask) {
   return {
     id: String(task.id),
     title: task.name,
-    description: task.description || null,
+    description: plainTextDescription(task.description),
     stage: task.stage_id ? STAGE_MAP[task.stage_id[1]] ?? "todo" : "todo",
     assigneeName: task.assignee_name ?? null,
-    deadline: task.date_deadline || null,
+    deadline: task.date_deadline ? task.date_deadline.slice(0, 10) : null,
     priority: PRIORITY_MAP[task.priority] ?? "normal",
     projectName: task.project_id ? task.project_id[1] : null,
     odooId: String(task.id),

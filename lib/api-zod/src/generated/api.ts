@@ -958,11 +958,65 @@ export const GetFinanceReportQueryParams = zod.object({
 
 export const GetFinanceReportResponseItem = zod.object({
   "month": zod.string(),
-  "revenue": zod.number(),
+  "revenue": zod.number().describe('Backward-compatible alias for billed invoice total'),
+  "billed": zod.number(),
+  "collected": zod.number(),
+  "outstanding": zod.number(),
   "invoiceCount": zod.number(),
-  "donations": zod.number()
+  "donations": zod.number(),
+  "currency": zod.string()
 })
 export const GetFinanceReportResponse = zod.array(GetFinanceReportResponseItem)
+
+
+/**
+ * @summary Get Odoo school automation settings
+ */
+export const getSchoolSettingsResponseFeeReminderDelayDaysMin = 0;
+
+
+
+
+export const GetSchoolSettingsResponse = zod.object({
+  "institutionId": zod.number(),
+  "institutionName": zod.string(),
+  "outgoingMailConfigured": zod.boolean(),
+  "attendanceNotificationsEnabled": zod.boolean(),
+  "automaticFeeRemindersEnabled": zod.boolean(),
+  "feeReminderDelayDays": zod.number().min(getSchoolSettingsResponseFeeReminderDelayDaysMin),
+  "feeReminderRepeatDays": zod.number().min(1)
+})
+
+
+/**
+ * @summary Update Odoo school automation settings
+ */
+export const updateSchoolSettingsBodyFeeReminderDelayDaysMin = 0;
+
+
+
+
+export const UpdateSchoolSettingsBody = zod.object({
+  "attendanceNotificationsEnabled": zod.boolean().optional(),
+  "automaticFeeRemindersEnabled": zod.boolean().optional(),
+  "feeReminderDelayDays": zod.number().min(updateSchoolSettingsBodyFeeReminderDelayDaysMin).optional(),
+  "feeReminderRepeatDays": zod.number().min(1).optional()
+})
+
+export const updateSchoolSettingsResponseFeeReminderDelayDaysMin = 0;
+
+
+
+
+export const UpdateSchoolSettingsResponse = zod.object({
+  "institutionId": zod.number(),
+  "institutionName": zod.string(),
+  "outgoingMailConfigured": zod.boolean(),
+  "attendanceNotificationsEnabled": zod.boolean(),
+  "automaticFeeRemindersEnabled": zod.boolean(),
+  "feeReminderDelayDays": zod.number().min(updateSchoolSettingsResponseFeeReminderDelayDaysMin),
+  "feeReminderRepeatDays": zod.number().min(1)
+})
 
 
 /**

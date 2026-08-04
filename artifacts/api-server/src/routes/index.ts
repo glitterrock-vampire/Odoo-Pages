@@ -13,6 +13,7 @@ import contentRouter from "./content";
 import tuitionRouter from "./tuition";
 import engagementRouter from "./engagement";
 import attendanceRouter from "./attendance";
+import schoolSettingsRouter from "./school-settings";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(contentRouter);
 router.use(tuitionRouter);
 router.use(engagementRouter);
 router.use(attendanceRouter);
+router.use(schoolSettingsRouter);
 
 export default router;
