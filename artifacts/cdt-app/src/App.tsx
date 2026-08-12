@@ -23,6 +23,7 @@ import Engagement from './pages/Engagement';
 import Attendance from './pages/Attendance';
 import NotFound from './pages/not-found';
 import { PreferencesProvider, getStoredPreferences, usePreferences } from './lib/preferences';
+import { enableMockMode } from './lib/mock-api-client';
 
 function queryDefaults(automaticOdooRefresh: boolean) {
   return {
@@ -68,6 +69,11 @@ function AppWithDataPreferences() {
       queries: queryDefaults(getStoredPreferences().automaticOdooRefresh),
     },
   }));
+
+  // Enable mock mode for Vercel deployment
+  useEffect(() => {
+    enableMockMode();
+  }, []);
 
   useEffect(() => {
     queryClient.setDefaultOptions({

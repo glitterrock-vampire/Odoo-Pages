@@ -1,0 +1,9 @@
+{
+  "buildCommand": "cd ../.. && pnpm install && cd artifacts/cdt-app && pnpm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "installCommand": "cd ../.. && pnpm install",
+  "env": {
+    "VITE_USE_MOCK_DATA": "true"
+  }
+}
