@@ -4,7 +4,7 @@ services:
     name: cdt-odoo-web
     runtime: docker
     plan: free
-    dockerfilePath: ./Dockerfile.web
+    dockerfilePath: ./infra/odoo/Dockerfile.web
     envVars:
       - key: HOST
         sync: false
