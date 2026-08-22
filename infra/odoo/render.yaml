@@ -27,10 +27,7 @@ services:
       - key: USER
         value: odoo
       - key: PASSWORD
-        fromService:
-          type: pserv
-          name: cdt-odoo-db
-          property: connectionString
+        generateValue: true
       - key: MAILCHIMP_API_KEY
         sync: false
       - key: MAILCHIMP_LIST_ID
