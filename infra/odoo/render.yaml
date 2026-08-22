@@ -30,7 +30,7 @@ services:
         fromService:
           type: pserv
           name: cdt-odoo-db
-          property: POSTGRES_PASSWORD
+          property: connectionString
       - key: MAILCHIMP_API_KEY
         sync: false
       - key: MAILCHIMP_LIST_ID
