@@ -1,0 +1,39 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: cdt-odoo-db
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.db
+    envVars:
+      - key: POSTGRES_DB
+        value: postgres
+      - key: POSTGRES_USER
+        value: odoo
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+
+  # Odoo Web Service
+  - type: web
+    name: cdt-odoo-web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.web
+    envVars:
+      - key: HOST
+        value: cdt-odoo-db.internal
+      - key: PORT
+        value: 5432
+      - key: USER
+        value: odoo
+      - key: PASSWORD
+        fromService:
+          type: pserv
+          name: cdt-odoo-db
+          envVar: POSTGRES_PASSWORD
+      - key: MAILCHIMP_API_KEY
+        sync: false
+      - key: MAILCHIMP_LIST_ID
+        sync: false
+      - key: CDT_NEWSLETTER_SHARED_SECRET
+        sync: false

@@ -1,0 +1,20 @@
+FROM odoo:18.0
+
+# Install dependencies if needed
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy custom addons
+COPY ./addons /mnt/extra-addons
+
+# Set environment variables
+ENV HOST=db
+ENV PORT=5432
+ENV USER=odoo
+
+# Expose Odoo port
+EXPOSE 8069
+
+# Start Odoo
+CMD ["odoo", "--without-demo=all"]
