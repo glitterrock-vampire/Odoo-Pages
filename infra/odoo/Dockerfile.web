@@ -3,11 +3,6 @@ FROM odoo:18.0
 # Copy custom addons
 COPY ./infra/odoo/addons /mnt/extra-addons
 
-# Set environment variables
-ENV HOST=db
-ENV PORT=5432
-ENV USER=odoo
-
 # Expose Odoo port
 EXPOSE 8069
 
