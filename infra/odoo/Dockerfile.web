@@ -1,10 +1,5 @@
 FROM odoo:18.0
 
-# Install dependencies if needed
-RUN apt-get update && apt-get install -y \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
-
 # Copy custom addons
 COPY ./infra/odoo/addons /mnt/extra-addons
 
