@@ -13,7 +13,7 @@ services:
       - key: DB_PORT
         value: 5432
       - key: DB_USER
-        value: postgres
+        value: odoo_user
       - key: DB_PASSWORD
         sync: false
       - key: DB_SSLMODE
