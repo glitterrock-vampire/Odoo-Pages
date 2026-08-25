@@ -13,7 +13,9 @@ services:
       - key: USER
         value: postgres
       - key: PASSWORD
-        value: OABcdA6YcIBtIzLYzDOrsY2J
+        sync: false
+      - key: DB_SSLMODE
+        value: require
       - key: MAILCHIMP_API_KEY
         sync: false
       - key: MAILCHIMP_LIST_ID

@@ -7,4 +7,4 @@ COPY ./infra/odoo/addons /mnt/extra-addons
 EXPOSE 8069
 
 # Start Odoo
-CMD ["odoo", "--without-demo=all"]
+CMD ["sh", "-c", "exec odoo --without-demo=all --db_sslmode=${DB_SSLMODE:-require}"]
