@@ -7,7 +7,7 @@ services:
     dockerfilePath: ./infra/odoo/Dockerfile.web
     envVars:
       - key: HOST
-        value: postgresql-1-fine-pool-pooler.cloud.layerbase.dev
+        value: postgresql-1-fine-pool.cloud.layerbase.dev
       - key: PORT
         value: 5432
       - key: USER
