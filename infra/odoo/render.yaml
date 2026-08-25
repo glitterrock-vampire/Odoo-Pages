@@ -7,13 +7,13 @@ services:
     dockerfilePath: ./infra/odoo/Dockerfile.web
     envVars:
       - key: HOST
-        value: postgresql-1-fine-pool.cloud.layerbase.dev
+        value: postgresql-1-fine-pool-pooler.cloud.layerbase.dev
       - key: PORT
         value: 5432
       - key: USER
-        sync: false
+        value: postgres
       - key: PASSWORD
-        sync: false
+        value: OABcdA6YcIBtIzLYzDOrsY2J
       - key: MAILCHIMP_API_KEY
         sync: false
       - key: MAILCHIMP_LIST_ID
