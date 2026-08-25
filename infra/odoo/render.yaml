@@ -11,9 +11,9 @@ services:
       - key: PORT
         value: 5432
       - key: USER
-        value: postgres
+        value: odoo_user
       - key: PASSWORD
-        sync: false
+        value: SecureOdooPass123!
       - key: DB_SSLMODE
         value: require
       - key: MAILCHIMP_API_KEY
