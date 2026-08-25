@@ -7,4 +7,4 @@ COPY ./infra/odoo/addons /mnt/extra-addons
 EXPOSE 8069
 
 # Start Odoo
-CMD ["sh", "-c", "exec odoo --without-demo=all --db_host=\"${HOST}\" --db_port=5432 --db_user=\"${USER}\" --db_password=\"${PASSWORD}\" --db_sslmode=\"${DB_SSLMODE:-require}\""]
+CMD ["sh", "-c", "exec odoo --without-demo=all --http-port=8069 --db_host=\"${DB_HOST:?DB_HOST is required}\" --db_port=\"${DB_PORT:-5432}\" --db_user=\"${DB_USER:?DB_USER is required}\" --db_password=\"${DB_PASSWORD:?DB_PASSWORD is required}\" --db_sslmode=\"${DB_SSLMODE:-require}\""]

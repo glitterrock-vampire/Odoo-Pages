@@ -6,13 +6,15 @@ services:
     plan: free
     dockerfilePath: ./infra/odoo/Dockerfile.web
     envVars:
-      - key: HOST
+      - key: DB_HOST
         value: postgresql-1-fine-pool-pooler.cloud.layerbase.dev
       - key: PORT
         value: 8069
-      - key: USER
+      - key: DB_PORT
+        value: 5432
+      - key: DB_USER
         value: postgres
-      - key: PASSWORD
+      - key: DB_PASSWORD
         sync: false
       - key: DB_SSLMODE
         value: require
