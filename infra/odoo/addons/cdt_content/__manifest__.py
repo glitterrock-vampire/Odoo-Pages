@@ -1,0 +1,27 @@
+{
+    "name": "CDT Company Content",
+    "summary": "Company people, performances, repertoire, and website content",
+    "version": "18.0.1.1.0",
+    "category": "Services",
+    "license": "LGPL-3",
+    "depends": [
+        "cdt_education",
+        "contacts",
+        "event",
+        "mail",
+        "mass_mailing",
+        "website_event_sale",
+    ],
+    "data": [
+        "security/communications_security.xml",
+        "security/ir.model.access.csv",
+        "data/marketing_data.xml",
+        "data/sanity_cron.xml",
+        "data/marketing_cron.xml",
+        "views/content_views.xml",
+        "views/marketing_views.xml",
+    ],
+    "post_init_hook": "post_init_hook",
+    "application": True,
+    "installable": True,
+}

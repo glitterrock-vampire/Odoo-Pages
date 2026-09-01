@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -13,16 +14,26 @@ import Performances from './pages/Performances';
 import Tasks from './pages/Tasks';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import Team from './pages/Team';
+import Repertoire from './pages/Repertoire';
+import Media from './pages/Media';
+import WebsiteSettings from './pages/WebsiteSettings';
+import Tuition from './pages/Tuition';
+import Engagement from './pages/Engagement';
+import Attendance from './pages/Attendance';
 import NotFound from './pages/not-found';
+import { PreferencesProvider, getStoredPreferences, usePreferences } from './lib/preferences';
+import { enableMockMode } from './lib/mock-api-client';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: false,
-    },
-  },
-});
+function queryDefaults(automaticOdooRefresh: boolean) {
+  return {
+    refetchOnMount: automaticOdooRefresh ? 'always' as const : false,
+    refetchOnWindowFocus: false,
+    retry: false,
+    staleTime: automaticOdooRefresh ? 0 : Infinity,
+    gcTime: automaticOdooRefresh ? 5 * 60 * 1000 : Infinity,
+  };
+}
 
 function Router() {
   return (
@@ -31,10 +42,17 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/students" component={Students} />
         <Route path="/classes" component={Classes} />
+        <Route path="/attendance" component={Attendance} />
         <Route path="/contacts" component={Contacts} />
         <Route path="/donations" component={Donations} />
         <Route path="/finances" component={Finances} />
+        <Route path="/tuition" component={Tuition} />
         <Route path="/performances" component={Performances} />
+        <Route path="/engagement" component={Engagement} />
+        <Route path="/team" component={Team} />
+        <Route path="/repertoire" component={Repertoire} />
+        <Route path="/media" component={Media} />
+        <Route path="/website-settings" component={WebsiteSettings} />
         <Route path="/tasks" component={Tasks} />
         <Route path="/reports" component={Reports} />
         <Route path="/settings" component={Settings} />
@@ -44,7 +62,25 @@ function Router() {
   );
 }
 
-function App() {
+function AppWithDataPreferences() {
+  const { preferences } = usePreferences();
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: queryDefaults(getStoredPreferences().automaticOdooRefresh),
+    },
+  }));
+
+  // Enable mock mode for Vercel deployment
+  useEffect(() => {
+    enableMockMode();
+  }, []);
+
+  useEffect(() => {
+    queryClient.setDefaultOptions({
+      queries: queryDefaults(preferences.automaticOdooRefresh),
+    });
+  }, [preferences.automaticOdooRefresh, queryClient]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -54,6 +90,14 @@ function App() {
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
+  );
+}
+
+function App() {
+  return (
+    <PreferencesProvider>
+      <AppWithDataPreferences />
+    </PreferencesProvider>
   );
 }
 

@@ -1,0 +1,12 @@
+FROM postgres:15
+
+# Set environment variables
+ENV POSTGRES_DB=postgres
+ENV POSTGRES_USER=odoo
+
+# Expose PostgreSQL port
+EXPOSE 5432
+
+# Health check
+HEALTHCHECK --interval=5s --timeout=5s --retries=20 \
+  CMD pg_isready -U odoo -d postgres

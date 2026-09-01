@@ -10,6 +10,7 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
+- Odoo env: `ODOO_URL`, `ODOO_DB`, `ODOO_USERNAME`, `ODOO_API_KEY`
 
 ## Stack
 
@@ -26,7 +27,10 @@ _Populate as you build — short repo map plus pointers to the source-of-truth f
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Students, classes, and performances remain in PostgreSQL during the ERP migration.
+- Contacts, invoices, donations, tasks, and finance reporting use Odoo JSON-RPC through `artifacts/api-server/src/lib/odoo.ts`.
+- Odoo credentials are server-only; the React app receives normalized provider-neutral DTOs.
+- Donations use the local `cdt_donation` Odoo add-on under `infra/odoo/addons`.
 
 ## Product
 

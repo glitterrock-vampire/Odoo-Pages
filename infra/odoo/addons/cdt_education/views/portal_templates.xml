@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="portal_my_home_education" inherit_id="portal.portal_my_home" name="Education Portal Card">
+    <xpath expr="//div[@id='portal_common_category']" position="before">
+      <div class="o_portal_category row g-2 mt-3" id="portal_education_category">
+        <div class="col-12"><h3>Education</h3></div>
+        <t t-call="portal.portal_docs_entry">
+          <t t-set="icon" t-value="'/portal/static/src/img/portal-connection.svg'"/>
+          <t t-set="title">Family Portal</t>
+          <t t-set="text">Children, schedules, attendance, grades, invoices and balances</t>
+          <t t-set="url" t-value="'/my/education'"/>
+          <t t-set="config_card" t-value="True"/>
+        </t>
+      </div>
+    </xpath>
+  </template>
+
+  <template id="portal_my_education" name="My Education">
+    <t t-call="portal.portal_layout">
+      <t t-set="additional_title">Family Portal</t>
+      <div class="container py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+          <div>
+            <p class="text-muted mb-1">CDT Jamaica</p>
+            <h1 class="h2 mb-0">Family Portal</h1>
+            <p class="text-muted mt-2 mb-0" t-if="is_guardian_view">A secure household view of your linked students.</p>
+          </div>
+          <a href="/my" class="btn btn-outline-secondary">Back to My Account</a>
+        </div>
+
+        <div class="alert alert-success" role="status" t-if="portal_notice"><t t-esc="portal_notice"/></div>
+        <div class="alert alert-danger" role="alert" t-if="portal_error"><t t-esc="portal_error"/></div>
+
+        <t t-if="not students">
+          <div class="alert alert-info">Your account is not linked to a student or guardian record yet. Contact the registrar for assistance.</div>
+        </t>
+
+        <div class="row g-3 mb-4" t-if="students">
+          <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Linked students</div><div class="h3 mb-0 mt-1"><t t-esc="len(students)"/></div></div></div></div>
+          <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Upcoming classes</div><div class="h3 mb-0 mt-1"><t t-esc="len(upcoming_schedule)"/></div></div></div></div>
+          <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Fees paid</div><div class="h5 mb-0 mt-2"><span t-esc="total_paid" t-options="{'widget': 'monetary', 'display_currency': portal_currency}"/></div></div></div></div>
+          <div class="col-6 col-lg-3"><div class="card h-100 border-warning"><div class="card-body"><div class="text-muted small">Balance due</div><div class="h5 mb-0 mt-2"><span t-esc="total_balance" t-options="{'widget': 'monetary', 'display_currency': portal_currency}"/></div></div></div></div>
+        </div>
+
+        <t t-foreach="students" t-as="student">
+          <section class="card mb-4">
+            <div class="card-body">
+              <div class="d-flex flex-wrap justify-content-between gap-3">
+                <div>
+                  <h2 class="h4 mb-1"><span t-field="student.full_name"/></h2>
+                  <div class="text-muted"><span t-field="student.name"/> · <span t-field="student.status"/></div>
+                </div>
+                <div class="text-end">
+                  <div t-if="student.current_program_id"><strong>Program:</strong> <span t-field="student.current_program_id"/></div>
+                  <div t-if="student.batch_id"><strong>Batch:</strong> <span t-field="student.batch_id"/></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </t>
+
+        <section class="card mb-4">
+          <div class="card-header"><h2 class="h5 mb-0">Upcoming Timetable</h2></div>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>Date and time</th><th>Course</th><th>Group</th><th>Instructor</th><th>Room</th></tr></thead>
+              <tbody>
+                <tr t-foreach="upcoming_schedule" t-as="schedule">
+                  <td><span t-field="schedule.start_datetime"/></td>
+                  <td><span t-field="schedule.course_id"/></td>
+                  <td><span t-field="schedule.student_group_id"/></td>
+                  <td><span t-field="schedule.instructor_id"/></td>
+                  <td><span t-field="schedule.room_id"/></td>
+                </tr>
+                <tr t-if="not upcoming_schedule"><td colspan="5" class="text-muted text-center py-4">No upcoming classes.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <section class="card h-100">
+              <div class="card-header"><h2 class="h5 mb-0">Recent Attendance</h2></div>
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Date</th><th>Student</th><th>Group</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr t-foreach="attendance_records" t-as="attendance">
+                      <td><span t-field="attendance.date"/></td>
+                      <td><span t-field="attendance.student_id"/></td>
+                      <td><span t-field="attendance.student_group_id"/></td>
+                      <td><span t-field="attendance.status"/></td>
+                    </tr>
+                    <tr t-if="not attendance_records"><td colspan="4" class="text-muted text-center py-4">No attendance records.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+          <div class="col-lg-6">
+            <section class="card h-100">
+              <div class="card-header"><h2 class="h5 mb-0">Published Grades</h2></div>
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead><tr><th>Date</th><th>Student</th><th>Course</th><th>Score</th><th>Grade</th></tr></thead>
+                  <tbody>
+                    <tr t-foreach="assessment_results" t-as="result">
+                      <td><span t-field="result.assessment_date"/></td>
+                      <td><span t-field="result.student_id"/></td>
+                      <td><span t-field="result.course_id"/></td>
+                      <td><span t-field="result.percentage"/>%</td>
+                      <td><span t-field="result.grade"/></td>
+                    </tr>
+                    <tr t-if="not assessment_results"><td colspan="5" class="text-muted text-center py-4">No published grades.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <section class="card mt-4">
+          <div class="card-header d-flex justify-content-between align-items-center"><h2 class="h5 mb-0">Invoices, balances and receipts</h2><span class="small text-muted">Receipts appear after payment is posted</span></div>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead><tr><th>Reference</th><th>Student</th><th>Due date</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                <tr t-foreach="student_fees" t-as="fee">
+                  <td><span t-field="fee.name"/><div class="small text-success" t-if="fee.payment_state == 'paid'">Receipt posted</div><div class="small text-muted" t-elif="fee.invoice_id">Invoice <span t-field="fee.invoice_id"/></div></td>
+                  <td><span t-field="fee.student_id"/></td>
+                  <td><span t-field="fee.due_date"/></td>
+                  <td><span t-field="fee.amount" t-options="{'widget': 'monetary', 'display_currency': fee.currency_id}"/></td>
+                  <td><span t-field="fee.amount_paid" t-options="{'widget': 'monetary', 'display_currency': fee.currency_id}"/></td>
+                  <td><span t-field="fee.balance" t-options="{'widget': 'monetary', 'display_currency': fee.currency_id}"/></td>
+                  <td><span t-field="fee.state"/></td>
+                  <td>
+                    <div class="d-flex flex-wrap gap-2" t-if="fee.invoice_id">
+                      <a t-att-href="'/my/education/fees/%s/document' % fee.id" class="btn btn-sm btn-outline-secondary">Download PDF</a>
+                      <a t-if="fee.id in fee_portal_urls" t-att-href="fee_portal_urls[fee.id]" class="btn btn-sm btn-primary"><t t-if="fee.balance &gt; 0">View / pay</t><t t-else="">View receipt</t></a>
+                    </div>
+                    <span t-else="" class="text-muted small">Invoice pending</span>
+                  </td>
+                </tr>
+                <tr t-if="not student_fees"><td colspan="8" class="text-muted text-center py-4">No fee records.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="family-actions" class="card mt-4" t-if="students">
+          <div class="card-header">
+            <h2 class="h5 mb-1">Family requests and documents</h2>
+            <p class="text-muted small mb-0">Submit an absence notice, record a consent decision, or upload a student document. Staff review submissions in Odoo.</p>
+          </div>
+          <div class="card-body p-0">
+            <div class="accordion accordion-flush" id="familyActionsAccordion">
+              <div class="accordion-item">
+                <h3 class="accordion-header" id="absenceHeading"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#absencePanel" aria-expanded="true" aria-controls="absencePanel">Submit an absence notice</button></h3>
+                <div id="absencePanel" class="accordion-collapse collapse show" aria-labelledby="absenceHeading" data-bs-parent="#familyActionsAccordion">
+                  <div class="accordion-body">
+                    <form action="/my/education/absence" method="post" enctype="multipart/form-data" class="row g-3">
+                      <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                      <div class="col-md-6"><label for="absence_student" class="form-label">Student</label><select id="absence_student" name="student_id" class="form-select" required="required"><option value="">Select a student</option><option t-foreach="students" t-as="student" t-att-value="student.id"><span t-field="student.full_name"/></option></select></div>
+                      <div class="col-md-3"><label for="absence_from" class="form-label">First day absent</label><input id="absence_from" name="date_from" type="date" class="form-control" required="required"/></div>
+                      <div class="col-md-3"><label for="absence_to" class="form-label">Expected return date</label><input id="absence_to" name="date_to" type="date" class="form-control" required="required"/></div>
+                      <div class="col-12"><label for="absence_reason" class="form-label">Reason</label><textarea id="absence_reason" name="reason" rows="3" class="form-control" required="required"></textarea></div>
+                      <div class="col-12"><label for="absence_document" class="form-label">Supporting document <span class="text-muted">(optional)</span></label><input id="absence_document" name="supporting_document" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="form-control" aria-describedby="absence_document_help"/><div id="absence_document_help" class="form-text">PDF, JPG, or PNG; maximum 8 MB.</div></div>
+                      <div class="col-12"><button type="submit" class="btn btn-primary">Submit absence notice</button></div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h3 class="accordion-header" id="consentHeading"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#consentPanel" aria-expanded="false" aria-controls="consentPanel">Record a consent decision</button></h3>
+                <div id="consentPanel" class="accordion-collapse collapse" aria-labelledby="consentHeading" data-bs-parent="#familyActionsAccordion">
+                  <div class="accordion-body">
+                    <form action="/my/education/consent" method="post" class="row g-3">
+                      <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                      <div class="col-md-6"><label for="consent_student" class="form-label">Student</label><select id="consent_student" name="student_id" class="form-select" required="required"><option value="">Select a student</option><option t-foreach="students" t-as="student" t-att-value="student.id"><span t-field="student.full_name"/></option></select></div>
+                      <div class="col-md-6"><label for="consent_type" class="form-label">Consent subject</label><select id="consent_type" name="consent_type" class="form-select" required="required"><option value="">Select a subject</option><option value="programme">Programme participation</option><option value="medical">Emergency medical care</option><option value="media">Photography and media</option><option value="transport">Transport and off-site activities</option><option value="data">Information and privacy</option><option value="other">Other</option></select></div>
+                      <fieldset class="col-12"><legend class="form-label">Decision</legend><div class="d-flex flex-wrap gap-4"><div class="form-check"><input id="consent_granted" name="decision" value="granted" type="radio" class="form-check-input" required="required"/><label for="consent_granted" class="form-check-label">I grant consent</label></div><div class="form-check"><input id="consent_declined" name="decision" value="declined" type="radio" class="form-check-input" required="required"/><label for="consent_declined" class="form-check-label">I decline consent</label></div></div></fieldset>
+                      <div class="col-md-6"><label for="signature_name" class="form-label">Parent/guardian full name</label><input id="signature_name" name="signature_name" autocomplete="name" class="form-control" required="required"/></div>
+                      <div class="col-12"><label for="consent_notes" class="form-label">Notes <span class="text-muted">(optional)</span></label><textarea id="consent_notes" name="notes" rows="2" class="form-control"></textarea></div>
+                      <div class="col-12"><div class="form-check"><input id="consent_acknowledged" name="acknowledged" value="yes" type="checkbox" class="form-check-input" required="required"/><label for="consent_acknowledged" class="form-check-label">I confirm this decision is accurate and understand that CDT will retain it as part of the student record.</label></div></div>
+                      <div class="col-12"><button type="submit" class="btn btn-primary">Record consent</button></div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item">
+                <h3 class="accordion-header" id="documentHeading"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#documentPanel" aria-expanded="false" aria-controls="documentPanel">Upload a student document</button></h3>
+                <div id="documentPanel" class="accordion-collapse collapse" aria-labelledby="documentHeading" data-bs-parent="#familyActionsAccordion">
+                  <div class="accordion-body">
+                    <form action="/my/education/document" method="post" enctype="multipart/form-data" class="row g-3">
+                      <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                      <div class="col-md-6"><label for="document_student" class="form-label">Student</label><select id="document_student" name="student_id" class="form-select" required="required"><option value="">Select a student</option><option t-foreach="students" t-as="student" t-att-value="student.id"><span t-field="student.full_name"/></option></select></div>
+                      <div class="col-md-6"><label for="document_category" class="form-label">Document type</label><select id="document_category" name="category" class="form-select" required="required"><option value="">Select a type</option><option value="identification">Identification</option><option value="medical">Medical</option><option value="consent">Consent</option><option value="academic">Academic</option><option value="other">Other</option></select></div>
+                      <div class="col-12"><label for="student_document" class="form-label">File</label><input id="student_document" name="student_document" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="form-control" required="required" aria-describedby="student_document_help"/><div id="student_document_help" class="form-text">PDF, JPG, or PNG; maximum 8 MB.</div></div>
+                      <div class="col-12"><label for="document_notes" class="form-label">Notes <span class="text-muted">(optional)</span></label><textarea id="document_notes" name="notes" rows="2" class="form-control"></textarea></div>
+                      <div class="col-12"><button type="submit" class="btn btn-primary">Upload document</button></div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="row g-4 mt-1" t-if="students">
+          <div class="col-lg-6">
+            <section class="card h-100">
+              <div class="card-header"><h2 class="h5 mb-0">Absence requests</h2></div>
+              <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Student</th><th>Dates</th><th>Status</th></tr></thead><tbody><tr t-foreach="leave_requests" t-as="leave"><td><span t-field="leave.student_id"/></td><td><span t-field="leave.date_from"/> – <span t-field="leave.date_to"/></td><td><span t-field="leave.state"/></td></tr><tr t-if="not leave_requests"><td colspan="3" class="text-muted text-center py-4">No absence requests submitted.</td></tr></tbody></table></div>
+            </section>
+          </div>
+          <div class="col-lg-6">
+            <section class="card h-100">
+              <div class="card-header"><h2 class="h5 mb-0">Consent and documents</h2></div>
+              <div class="card-body"><p class="small text-muted mb-2">Recent consent decisions</p><ul class="list-group list-group-flush mb-4"><li class="list-group-item px-0 d-flex justify-content-between gap-3" t-foreach="consent_records" t-as="consent"><span><span t-field="consent.student_id"/> · <span t-field="consent.consent_type"/></span><strong><span t-field="consent.decision"/></strong></li><li class="list-group-item px-0 text-muted" t-if="not consent_records">No consent decisions recorded.</li></ul><p class="small text-muted mb-2">Uploaded documents</p><ul class="list-group list-group-flush"><li class="list-group-item px-0 d-flex justify-content-between gap-3" t-foreach="student_documents" t-as="document"><span><span t-field="document.student_id"/> · <span t-field="document.name"/></span><span t-if="document.verified" class="badge text-bg-success">Verified</span><span t-else="" class="badge text-bg-secondary">Under review</span></li><li class="list-group-item px-0 text-muted" t-if="not student_documents">No documents uploaded.</li></ul></div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </t>
+  </template>
+</odoo>

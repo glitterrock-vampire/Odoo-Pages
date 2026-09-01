@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <template id="cdt_website_footer" inherit_id="website.footer_custom" name="CDT Website Footer" priority="30">
+    <xpath expr="//div[@id='footer']" position="replace">
+      <footer id="footer" class="border-top bg-light" t-if="not no_footer">
+        <div class="container py-5">
+          <div class="row g-4 align-items-start">
+            <div class="col-lg-6">
+              <p class="text-uppercase text-muted fw-semibold small mb-2" style="letter-spacing: .12em;">CDT Jamaica</p>
+              <h2 class="h4 mb-3">Training, performance, and community through dance.</h2>
+              <p class="text-muted mb-0" style="max-width: 560px;">This demonstration connects public applications and family self-service directly to CDT's open-source Odoo administration system.</p>
+            </div>
+            <div class="col-6 col-lg-3">
+              <h3 class="h6">Prospective families</h3>
+              <ul class="list-unstyled mb-0">
+                <li class="mb-2"><a href="/apply">Online admissions</a></li>
+                <li><a href="/contactus">Contact CDT</a></li>
+              </ul>
+            </div>
+            <div class="col-6 col-lg-3">
+              <h3 class="h6">Current families</h3>
+              <ul class="list-unstyled mb-0">
+                <li class="mb-2"><a href="/my/education">Family portal</a></li>
+                <li><a href="/web/login?redirect=/my/education">Sign in</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </xpath>
+  </template>
+
+  <template id="cdt_website_copyright" inherit_id="website.footer_copyright_company_name" name="CDT Website Copyright" priority="30">
+    <xpath expr="//span[hasclass('o_footer_copyright_name')]" position="replace">
+      <span class="o_footer_copyright_name me-2">Copyright © CDT Jamaica</span>
+    </xpath>
+  </template>
+
+  <template id="online_admissions_home" name="CDT Online Admissions">
+    <t t-call="website.layout">
+      <t t-set="additional_title">Online Admissions</t>
+      <main class="container py-5" style="max-width: 1040px;">
+        <div class="border-bottom pb-4 mb-4">
+          <p class="text-uppercase text-muted fw-semibold small mb-2" style="letter-spacing: .12em;">CDT Jamaica</p>
+          <h1 class="display-5 fw-semibold mb-3">Online admissions</h1>
+          <p class="lead text-muted mb-0" style="max-width: 720px;">Apply for a CDT programme, provide guardian details, and upload a supporting document. The admissions team reviews every application in Odoo.</p>
+        </div>
+        <div class="row g-4" t-if="admission_rounds">
+          <div class="col-md-6" t-foreach="admission_rounds" t-as="admission">
+            <article class="card h-100 shadow-sm">
+              <div class="card-body p-4">
+                <span class="badge text-bg-success mb-3">Applications open</span>
+                <h2 class="h4"><span t-field="admission.name"/></h2>
+                <p class="text-muted"><span t-field="admission.program_id"/> · <span t-field="admission.academic_year_id"/></p>
+                <div t-if="admission.introduction" t-field="admission.introduction" class="mb-3"/>
+                <dl class="row small mb-4">
+                  <dt class="col-6">Closing date</dt><dd class="col-6 text-end"><span t-field="admission.application_end"/></dd>
+                  <dt class="col-6">Age range</dt><dd class="col-6 text-end"><span t-field="admission.minimum_age"/>–<span t-field="admission.maximum_age"/></dd>
+                  <dt class="col-6">Places remaining</dt><dd class="col-6 text-end"><span t-field="admission.remaining_capacity"/> of <span t-field="admission.capacity"/></dd>
+                  <dt class="col-6">Audition</dt><dd class="col-6 text-end"><t t-if="admission.audition_required">Required after review</t><t t-else="">Not required</t></dd>
+                  <dt class="col-6">Application fee</dt><dd class="col-6 text-end"><span t-field="admission.application_fee" t-options="{'widget': 'monetary', 'display_currency': admission.currency_id}"/></dd>
+                </dl>
+                <a t-att-href="'/apply/%s' % admission.id" class="btn btn-primary w-100">Start application</a>
+              </div>
+            </article>
+          </div>
+        </div>
+        <div class="alert alert-info" t-if="not admission_rounds">There are no application rounds open at this time. Please check again soon.</div>
+      </main>
+    </t>
+  </template>
+
+  <template id="online_admissions_form" name="CDT Admission Application">
+    <t t-call="website.layout">
+      <t t-set="additional_title">Apply to CDT</t>
+      <main class="container py-5" style="max-width: 880px;">
+        <a href="/apply" class="link-secondary text-decoration-none">← All programmes</a>
+        <div class="border-bottom py-4 mb-4">
+          <p class="text-uppercase text-muted fw-semibold small mb-2" style="letter-spacing: .12em;">Online application</p>
+          <h1 class="h2 mb-2"><span t-field="admission.name"/></h1>
+          <p class="text-muted mb-0"><span t-field="admission.program_id"/> · Applications close <span t-field="admission.application_end"/></p>
+        </div>
+        <div class="alert alert-danger" role="alert" t-if="errors">
+          <p class="fw-semibold mb-2">Please correct the following:</p>
+          <ul class="mb-0"><li t-foreach="errors" t-as="error"><t t-esc="error"/></li></ul>
+        </div>
+        <form t-att-action="'/apply/%s' % admission.id" method="post" enctype="multipart/form-data" class="card shadow-sm">
+          <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+          <div aria-hidden="true" style="position:absolute;left:-10000px;"><label>Company website<input name="company_website" tabindex="-1" autocomplete="off"/></label></div>
+          <div class="card-body p-4 p-md-5">
+            <fieldset class="mb-5">
+              <legend class="h5 border-bottom pb-2 mb-3">Student information</legend>
+              <div class="row g-3">
+                <div class="col-md-5"><label for="first_name" class="form-label">First name <span class="text-danger">*</span></label><input id="first_name" name="first_name" class="form-control" autocomplete="given-name" required="required" t-att-value="form_values.get('first_name', '')"/></div>
+                <div class="col-md-3"><label for="middle_name" class="form-label">Middle name</label><input id="middle_name" name="middle_name" class="form-control" autocomplete="additional-name" t-att-value="form_values.get('middle_name', '')"/></div>
+                <div class="col-md-4"><label for="last_name" class="form-label">Last name <span class="text-danger">*</span></label><input id="last_name" name="last_name" class="form-control" autocomplete="family-name" required="required" t-att-value="form_values.get('last_name', '')"/></div>
+                <div class="col-md-6"><label for="date_of_birth" class="form-label">Date of birth</label><input id="date_of_birth" name="date_of_birth" type="date" class="form-control" t-att-value="form_values.get('date_of_birth', '')"/></div>
+                <div class="col-md-6"><label for="gender" class="form-label">Gender</label><select id="gender" name="gender" class="form-select"><option value="">Select</option><option value="female">Female</option><option value="male">Male</option><option value="non_binary">Non-binary</option><option value="not_stated">Prefer not to say</option></select></div>
+                <div class="col-md-6"><label for="email" class="form-label">Student email</label><input id="email" name="email" type="email" inputmode="email" autocomplete="email" class="form-control" t-att-value="form_values.get('email', '')"/></div>
+                <div class="col-md-6"><label for="phone" class="form-label">Student phone</label><input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" class="form-control" t-att-value="form_values.get('phone', '')"/></div>
+                <div class="col-12"><label for="prior_school" class="form-label">Current or previous school</label><input id="prior_school" name="prior_school" class="form-control" t-att-value="form_values.get('prior_school', '')"/></div>
+              </div>
+            </fieldset>
+            <fieldset class="mb-5">
+              <legend class="h5 border-bottom pb-2 mb-3">Parent or guardian</legend>
+              <div class="row g-3">
+                <div class="col-12"><label for="guardian_name" class="form-label">Full name <span class="text-danger">*</span></label><input id="guardian_name" name="guardian_name" autocomplete="name" class="form-control" required="required" t-att-value="form_values.get('guardian_name', '')"/></div>
+                <div class="col-md-6"><label for="guardian_email" class="form-label">Email <span class="text-danger">*</span></label><input id="guardian_email" name="guardian_email" type="email" inputmode="email" autocomplete="email" class="form-control" required="required" t-att-value="form_values.get('guardian_email', '')"/></div>
+                <div class="col-md-6"><label for="guardian_phone" class="form-label">Phone</label><input id="guardian_phone" name="guardian_phone" type="tel" inputmode="tel" autocomplete="tel" class="form-control" t-att-value="form_values.get('guardian_phone', '')"/></div>
+              </div>
+            </fieldset>
+            <fieldset class="mb-4">
+              <legend class="h5 border-bottom pb-2 mb-3">Supporting information</legend>
+              <div class="mb-3"><label for="notes" class="form-label">Experience, interests, or accommodation needs</label><textarea id="notes" name="notes" rows="4" class="form-control"><t t-esc="form_values.get('notes', '')"/></textarea></div>
+              <label for="supporting_document" class="form-label">Supporting document</label>
+              <input id="supporting_document" name="supporting_document" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="form-control" aria-describedby="document_help"/>
+              <div id="document_help" class="form-text">Optional. PDF, JPG, or PNG; maximum 8 MB.</div>
+            </fieldset>
+            <div class="form-check mb-4"><input id="consent" name="consent" value="yes" type="checkbox" class="form-check-input" required="required"/><label for="consent" class="form-check-label">I confirm this information is accurate and may be used by CDT Jamaica to process this application.</label></div>
+            <button type="submit" class="btn btn-primary btn-lg">Submit application</button>
+            <p class="small text-muted mt-3 mb-0">Submitting does not charge a fee or guarantee enrolment. CDT will contact the guardian before the next step.</p>
+          </div>
+        </form>
+      </main>
+    </t>
+  </template>
+
+  <template id="online_admissions_confirmation" name="CDT Application Received">
+    <t t-call="website.layout">
+      <t t-set="additional_title">Application Received</t>
+      <main class="container py-5" style="max-width: 760px;">
+        <div class="card shadow-sm"><div class="card-body p-5 text-center">
+          <div class="rounded-circle bg-success-subtle text-success d-inline-flex align-items-center justify-content-center mb-4" style="width:64px;height:64px;font-size:28px;">✓</div>
+          <p class="text-uppercase text-muted fw-semibold small mb-2" style="letter-spacing: .12em;">Application received</p>
+          <h1 class="h2">Thank you, <span t-esc="applicant.first_name"/>.</h1>
+          <p class="lead text-muted">Your reference is <strong class="text-dark"><span t-field="applicant.name"/></strong>.</p>
+          <p>CDT Jamaica will review the application for <span t-field="admission.program_id"/> and contact <span t-esc="applicant.guardian_email"/>.</p>
+          <a href="/" class="btn btn-outline-primary mt-3">Return to website</a>
+        </div></div>
+      </main>
+    </t>
+  </template>
+</odoo>

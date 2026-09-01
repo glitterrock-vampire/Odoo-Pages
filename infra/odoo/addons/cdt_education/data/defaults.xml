@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+  <record id="institution_cdt_jamaica" model="cdt.education.institution">
+    <field name="name">CDT Jamaica</field>
+    <field name="code">CDT</field>
+    <field name="company_id" ref="base.main_company"/>
+    <field name="partner_id" ref="base.main_partner"/>
+    <field name="portal_enabled">True</field>
+    <field name="attendance_by_schedule">True</field>
+  </record>
+
+  <record id="grading_scale_standard" model="cdt.grading.scale">
+    <field name="name">CDT Standard Grading Scale</field>
+    <field name="description">Default percentage grading scale. Administrators can edit these ranges.</field>
+  </record>
+  <record id="grading_scale_a" model="cdt.grading.scale.line">
+    <field name="scale_id" ref="grading_scale_standard"/>
+    <field name="grade">A</field>
+    <field name="minimum_percentage">80</field>
+    <field name="maximum_percentage">100</field>
+    <field name="description">Excellent</field>
+    <field name="passing_grade">True</field>
+  </record>
+  <record id="grading_scale_b" model="cdt.grading.scale.line">
+    <field name="scale_id" ref="grading_scale_standard"/>
+    <field name="grade">B</field>
+    <field name="minimum_percentage">70</field>
+    <field name="maximum_percentage">79.99</field>
+    <field name="description">Very good</field>
+    <field name="passing_grade">True</field>
+  </record>
+  <record id="grading_scale_c" model="cdt.grading.scale.line">
+    <field name="scale_id" ref="grading_scale_standard"/>
+    <field name="grade">C</field>
+    <field name="minimum_percentage">60</field>
+    <field name="maximum_percentage">69.99</field>
+    <field name="description">Good</field>
+    <field name="passing_grade">True</field>
+  </record>
+  <record id="grading_scale_d" model="cdt.grading.scale.line">
+    <field name="scale_id" ref="grading_scale_standard"/>
+    <field name="grade">D</field>
+    <field name="minimum_percentage">50</field>
+    <field name="maximum_percentage">59.99</field>
+    <field name="description">Pass</field>
+    <field name="passing_grade">True</field>
+  </record>
+  <record id="grading_scale_f" model="cdt.grading.scale.line">
+    <field name="scale_id" ref="grading_scale_standard"/>
+    <field name="grade">F</field>
+    <field name="minimum_percentage">0</field>
+    <field name="maximum_percentage">49.99</field>
+    <field name="description">Not yet competent</field>
+    <field name="passing_grade">False</field>
+  </record>
+
+  <record id="assessment_group_exam" model="cdt.assessment.group">
+    <field name="name">Examination</field>
+    <field name="code">EXAM</field>
+  </record>
+  <record id="assessment_group_coursework" model="cdt.assessment.group">
+    <field name="name">Coursework</field>
+    <field name="code">COURSEWORK</field>
+  </record>
+</odoo>

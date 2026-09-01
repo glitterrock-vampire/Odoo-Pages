@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+  <record id="mailing_list_website_subscribers" model="mailing.list">
+    <field name="name">CDT Website Subscribers</field>
+    <field name="active">True</field>
+  </record>
+</odoo>

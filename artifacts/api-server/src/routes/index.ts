@@ -9,6 +9,11 @@ import performancesRouter from "./performances";
 import tasksRouter from "./tasks";
 import dashboardRouter from "./dashboard";
 import reportsRouter from "./reports";
+import contentRouter from "./content";
+import tuitionRouter from "./tuition";
+import engagementRouter from "./engagement";
+import attendanceRouter from "./attendance";
+import schoolSettingsRouter from "./school-settings";
 
 const router: IRouter = Router();
 
@@ -22,5 +27,10 @@ router.use(performancesRouter);
 router.use(tasksRouter);
 router.use(dashboardRouter);
 router.use(reportsRouter);
+router.use(contentRouter);
+router.use(tuitionRouter);
+router.use(engagementRouter);
+router.use(attendanceRouter);
+router.use(schoolSettingsRouter);
 
 export default router;

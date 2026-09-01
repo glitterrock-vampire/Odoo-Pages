@@ -1,0 +1,26 @@
+services:
+  # Odoo Web Service (using external PostgreSQL from Layerbase)
+  - type: web
+    name: cdt-odoo-web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./infra/odoo/Dockerfile.web
+    envVars:
+      - key: DB_HOST
+        value: postgresql-1-fine-pool-pooler.cloud.layerbase.dev
+      - key: PORT
+        value: 8069
+      - key: DB_PORT
+        value: 5432
+      - key: DB_USER
+        value: odoo_user
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: MAILCHIMP_API_KEY
+        sync: false
+      - key: MAILCHIMP_LIST_ID
+        sync: false
+      - key: CDT_NEWSLETTER_SHARED_SECRET
+        sync: false

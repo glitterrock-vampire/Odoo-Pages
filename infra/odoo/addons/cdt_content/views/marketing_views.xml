@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_mailing_contact_list_cdt_source" model="ir.ui.view">
+    <field name="name">mailing.contact.list.cdt.source</field>
+    <field name="model">mailing.contact</field>
+    <field name="inherit_id" ref="mass_mailing.mailing_contact_view_tree"/>
+    <field name="arch" type="xml">
+      <field name="email" position="after">
+        <field name="cdt_source" optional="show"/>
+        <field name="cdt_source_status" optional="show" widget="badge"/>
+        <field name="cdt_consent_at" optional="hide"/>
+        <field name="cdt_last_sync_at" optional="hide"/>
+      </field>
+    </field>
+  </record>
+
+  <record id="view_mailing_contact_form_cdt_source" model="ir.ui.view">
+    <field name="name">mailing.contact.form.cdt.source</field>
+    <field name="model">mailing.contact</field>
+    <field name="inherit_id" ref="mass_mailing.mailing_contact_view_form"/>
+    <field name="arch" type="xml">
+      <field name="tag_ids" position="after">
+        <field name="cdt_source"/>
+        <field name="cdt_source_status"/>
+        <field name="cdt_consent_at" readonly="1"/>
+        <field name="cdt_last_sync_at" readonly="1"/>
+        <field name="cdt_source_key" readonly="1" groups="cdt_content.group_communications_manager"/>
+      </field>
+    </field>
+  </record>
+
+  <record id="view_mailing_mailing_form_cdt_permissions" model="ir.ui.view">
+    <field name="name">mailing.mailing.form.cdt.permissions</field>
+    <field name="model">mailing.mailing</field>
+    <field name="inherit_id" ref="mass_mailing.view_mail_mass_mailing_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//button[@name='action_launch']" position="attributes">
+        <attribute name="groups">cdt_content.group_communications_manager</attribute>
+      </xpath>
+      <xpath expr="//button[@name='action_schedule']" position="attributes">
+        <attribute name="groups">cdt_content.group_communications_manager</attribute>
+      </xpath>
+      <xpath expr="//button[@name='action_send_winner_mailing']" position="attributes">
+        <attribute name="groups">cdt_content.group_communications_manager</attribute>
+      </xpath>
+    </field>
+  </record>
+
+  <record id="view_site_setting_form_marketing_sync" model="ir.ui.view">
+    <field name="name">cdt.site.setting.form.marketing.sync</field>
+    <field name="model">cdt.site.setting</field>
+    <field name="inherit_id" ref="cdt_content.view_site_setting_form"/>
+    <field name="arch" type="xml">
+      <button name="action_sync_sanity" position="after">
+        <button name="action_sync_marketing_audience" type="object" string="Sync Marketing Audience" class="btn-secondary" groups="cdt_content.group_communications_manager"/>
+      </button>
+      <xpath expr="//group[@name='sanity_synchronization']" position="after">
+        <group string="Email Marketing Audience">
+          <group>
+            <field name="marketing_audience_active"/>
+            <field name="marketing_audience_opt_out"/>
+            <field name="marketing_audience_total"/>
+          </group>
+          <group>
+            <field name="marketing_last_sync_at"/>
+            <field name="marketing_last_sync_status" widget="badge"/>
+            <field name="marketing_last_sync_message"/>
+          </group>
+        </group>
+      </xpath>
+    </field>
+  </record>
+
+  <menuitem id="menu_company_communications" name="Communications" parent="cdt_donation.menu_cdt_root" sequence="6" groups="cdt_content.group_communications_user"/>
+  <menuitem id="menu_company_campaigns" name="Campaigns" parent="menu_company_communications" action="mass_mailing.mailing_mailing_action_mail" sequence="10"/>
+  <menuitem id="menu_company_mailing_lists" name="Mailing Lists" parent="menu_company_communications" action="mass_mailing.action_view_mass_mailing_lists" sequence="20"/>
+  <menuitem id="menu_company_mailing_contacts" name="Subscribers" parent="menu_company_communications" action="mass_mailing.action_view_mass_mailing_contacts" sequence="30"/>
+</odoo>

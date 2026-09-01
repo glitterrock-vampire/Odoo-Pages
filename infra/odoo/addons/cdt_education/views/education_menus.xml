@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="cdt_donation.menu_donations" model="ir.ui.menu">
+    <field name="sequence">90</field>
+  </record>
+
+  <record id="action_student_portal" model="ir.actions.act_url">
+    <field name="name">Student Portal</field>
+    <field name="url">/my/education</field>
+    <field name="target">self</field>
+  </record>
+
+  <menuitem id="menu_admissions_root" name="Admissions" parent="cdt_donation.menu_cdt_root" sequence="10" groups="group_education_user"/>
+  <menuitem id="menu_student_admission" name="Admission Rounds" parent="menu_admissions_root" action="action_student_admission" sequence="10"/>
+  <menuitem id="menu_student_applicant" name="Student Applicants" parent="menu_admissions_root" action="action_student_applicant" sequence="20"/>
+  <menuitem id="menu_program_enrollment" name="Program Enrollments" parent="menu_admissions_root" action="action_program_enrollment" sequence="30"/>
+  <menuitem id="menu_course_enrollment" name="Course Enrollments" parent="menu_admissions_root" action="action_course_enrollment" sequence="40"/>
+
+  <menuitem id="menu_students_root" name="Students" parent="cdt_donation.menu_cdt_root" sequence="20" groups="group_education_user"/>
+  <menuitem id="menu_students" name="Students" parent="menu_students_root" action="action_student" sequence="10"/>
+  <menuitem id="menu_guardians" name="Guardians" parent="menu_students_root" action="action_guardian" sequence="20"/>
+  <menuitem id="menu_student_logs" name="Student Logs" parent="menu_students_root" action="action_student_log" sequence="30"/>
+  <menuitem id="menu_guardian_consents" name="Family Consent Records" parent="menu_students_root" action="action_guardian_consent" sequence="40"/>
+  <menuitem id="menu_student_documents" name="Student Documents" parent="menu_students_root" action="action_student_document" sequence="50"/>
+  <menuitem id="menu_student_portal" name="Student Portal" parent="menu_students_root" action="action_student_portal" sequence="60"/>
+
+  <menuitem id="menu_academics_root" name="Academics" parent="cdt_donation.menu_cdt_root" sequence="30" groups="group_education_user"/>
+  <menuitem id="menu_programs" name="Programs" parent="menu_academics_root" action="action_program" sequence="10"/>
+  <menuitem id="menu_courses" name="Courses" parent="menu_academics_root" action="action_course" sequence="20"/>
+  <menuitem id="menu_course_offerings" name="Classes / Course Offerings" parent="menu_academics_root" action="action_course_offering" sequence="30"/>
+  <menuitem id="menu_student_groups" name="Student Groups" parent="menu_academics_root" action="action_student_group" sequence="40"/>
+  <menuitem id="menu_instructors" name="Instructors" parent="menu_academics_root" action="action_instructor" sequence="50"/>
+
+  <menuitem id="menu_timetable_root" name="Timetable" parent="cdt_donation.menu_cdt_root" sequence="40" groups="group_education_user"/>
+  <menuitem id="menu_course_schedule" name="Course Timetable" parent="menu_timetable_root" action="action_course_schedule" sequence="10"/>
+  <menuitem id="menu_instructor_logs" name="Instructor Logs" parent="menu_timetable_root" action="action_instructor_log" sequence="20"/>
+  <menuitem id="menu_rooms" name="Rooms" parent="menu_timetable_root" action="action_education_room" sequence="30"/>
+
+  <menuitem id="menu_attendance_root" name="Attendance" parent="cdt_donation.menu_cdt_root" sequence="50" groups="group_education_user"/>
+  <menuitem id="menu_student_attendance" name="Student Attendance" parent="menu_attendance_root" action="action_student_attendance" sequence="10"/>
+  <menuitem id="menu_bulk_attendance" name="Bulk Attendance Tool" parent="menu_attendance_root" action="action_attendance_bulk_wizard" sequence="20"/>
+  <menuitem id="menu_student_leave" name="Leave Applications" parent="menu_attendance_root" action="action_student_leave" sequence="30"/>
+
+  <menuitem id="menu_assessments_root" name="Assessments" parent="cdt_donation.menu_cdt_root" sequence="60" groups="group_education_user"/>
+  <menuitem id="menu_assessment_plans" name="Assessment Plans" parent="menu_assessments_root" action="action_assessment_plan" sequence="10"/>
+  <menuitem id="menu_assessment_results" name="Assessment Results" parent="menu_assessments_root" action="action_assessment_result" sequence="20"/>
+  <menuitem id="menu_grading_scales" name="Grading Scales" parent="menu_assessments_root" action="action_grading_scale" sequence="30"/>
+  <menuitem id="menu_assessment_groups" name="Assessment Groups" parent="menu_assessments_root" action="action_assessment_group" sequence="40"/>
+  <menuitem id="menu_assessment_criteria" name="Assessment Criteria" parent="menu_assessments_root" action="action_assessment_criterion" sequence="50"/>
+
+  <menuitem id="menu_fees_root" name="Fees" parent="cdt_donation.menu_cdt_root" sequence="70" groups="group_education_finance"/>
+  <menuitem id="menu_student_fees" name="Student Fees" parent="menu_fees_root" action="action_student_fee" sequence="10"/>
+  <menuitem id="menu_fee_schedules" name="Fee Schedules" parent="menu_fees_root" action="action_fee_schedule" sequence="20"/>
+  <menuitem id="menu_fee_structures" name="Fee Structures" parent="menu_fees_root" action="action_fee_structure" sequence="30"/>
+  <menuitem id="menu_fee_categories" name="Fee Categories" parent="menu_fees_root" action="action_fee_category" sequence="40"/>
+
+  <menuitem id="menu_reports_root" name="Reports" parent="cdt_donation.menu_cdt_root" sequence="80" groups="group_education_user"/>
+  <menuitem id="menu_attendance_report" name="Attendance Report" parent="menu_reports_root" action="action_attendance_report" sequence="10"/>
+  <menuitem id="menu_grade_book_report" name="Grade Book" parent="menu_reports_root" action="action_grade_book_report" sequence="20"/>
+  <menuitem id="menu_fee_collection_report" name="Fee Collection Report" parent="menu_reports_root" action="action_fee_collection_report" sequence="30" groups="group_education_finance"/>
+
+  <menuitem id="menu_configuration_root" name="Configuration" parent="cdt_donation.menu_cdt_root" sequence="100" groups="group_education_manager"/>
+  <menuitem id="menu_education_settings" name="Education Settings" parent="menu_configuration_root" action="action_education_institution" sequence="10"/>
+  <menuitem id="menu_academic_years" name="Academic Years" parent="menu_configuration_root" action="action_academic_year" sequence="20"/>
+  <menuitem id="menu_academic_terms" name="Academic Terms" parent="menu_configuration_root" action="action_academic_term" sequence="30"/>
+  <menuitem id="menu_departments" name="Departments" parent="menu_configuration_root" action="action_education_department" sequence="40"/>
+  <menuitem id="menu_student_categories" name="Student Categories" parent="menu_configuration_root" action="action_student_category" sequence="50"/>
+  <menuitem id="menu_student_batches" name="Student Batches" parent="menu_configuration_root" action="action_student_batch" sequence="60"/>
+  <menuitem id="menu_student_houses" name="Student Houses" parent="menu_configuration_root" action="action_student_house" sequence="70"/>
+  <menuitem id="menu_course_topics" name="Course Topics" parent="menu_configuration_root" action="action_course_topic" sequence="80"/>
+</odoo>

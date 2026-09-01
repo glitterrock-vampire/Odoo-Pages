@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_student_admission_list" model="ir.ui.view">
+    <field name="name">cdt.student.admission.list</field>
+    <field name="model">cdt.student.admission</field>
+    <field name="arch" type="xml">
+      <list decoration-success="state == 'open'" decoration-muted="state in ('closed', 'cancelled')">
+        <field name="name"/><field name="program_id"/><field name="academic_year_id"/><field name="application_start"/><field name="application_end"/><field name="capacity"/><field name="application_count"/><field name="admitted_count"/><field name="remaining_capacity"/><field name="application_fee"/><field name="state" widget="badge"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_student_admission_form" model="ir.ui.view">
+    <field name="name">cdt.student.admission.form</field>
+    <field name="model">cdt.student.admission</field>
+    <field name="arch" type="xml">
+      <form>
+        <header>
+          <button name="action_open" type="object" string="Open Admissions" class="btn-primary" invisible="state == 'open'"/>
+          <button name="action_close" type="object" string="Close Admissions" invisible="state != 'open'"/>
+          <field name="state" widget="statusbar" statusbar_visible="draft,open,closed"/>
+        </header>
+        <sheet>
+          <div class="oe_title"><h1><field name="name"/></h1></div>
+          <group>
+            <group><field name="program_id"/><field name="academic_year_id"/><field name="capacity"/><field name="application_count" readonly="1"/><field name="admitted_count" readonly="1"/><field name="remaining_capacity" readonly="1"/><field name="published"/></group>
+            <group><field name="application_start"/><field name="application_end"/><field name="minimum_age"/><field name="maximum_age"/></group>
+          </group>
+          <group string="Selection Process"><field name="audition_required"/></group>
+          <group string="Application Fee"><field name="application_fee"/><field name="currency_id" groups="base.group_multi_currency"/></group>
+          <notebook>
+            <page string="Introduction"><field name="introduction" widget="html"/></page>
+            <page string="Applicants"><field name="applicant_ids" readonly="1"><list><field name="name"/><field name="full_name"/><field name="application_date"/><field name="application_fee_paid"/><field name="state" widget="badge"/></list></field></page>
+          </notebook>
+        </sheet>
+        <chatter/>
+      </form>
+    </field>
+  </record>
+  <record id="action_student_admission" model="ir.actions.act_window">
+    <field name="name">Admission Rounds</field><field name="res_model">cdt.student.admission</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_student_applicant_list" model="ir.ui.view">
+    <field name="name">cdt.student.applicant.list</field>
+    <field name="model">cdt.student.applicant</field>
+    <field name="arch" type="xml">
+      <list decoration-success="state == 'admitted'" decoration-info="state in ('offered', 'offer_accepted')" decoration-warning="state in ('audition', 'waitlisted')" decoration-danger="state == 'rejected'" decoration-muted="state == 'withdrawn'">
+        <field name="name"/><field name="full_name"/><field name="program_id"/><field name="academic_year_id"/><field name="application_date"/><field name="email"/><field name="phone"/><field name="audition_result" widget="badge"/><field name="application_fee_paid"/><field name="state" widget="badge"/>
+      </list>
+    </field>
+  </record>
+  <record id="view_student_applicant_form" model="ir.ui.view">
+    <field name="name">cdt.student.applicant.form</field>
+    <field name="model">cdt.student.applicant</field>
+    <field name="arch" type="xml">
+      <form>
+        <header>
+          <button name="action_schedule_audition" type="object" string="Schedule Audition" class="btn-primary" invisible="state != 'applied'"/>
+          <button name="action_approve" type="object" string="Approve" class="btn-primary" invisible="state not in ('applied', 'audition', 'waitlisted')"/>
+          <button name="action_waitlist" type="object" string="Waitlist" invisible="state not in ('applied', 'audition', 'approved')"/>
+          <button name="action_offer" type="object" string="Queue Enrollment Offer" class="btn-primary" invisible="state not in ('approved', 'waitlisted')"/>
+          <button name="action_accept_offer" type="object" string="Mark Offer Accepted" class="btn-primary" invisible="state != 'offered'"/>
+          <button name="action_reject" type="object" string="Reject" invisible="state in ('rejected', 'admitted', 'withdrawn')"/>
+          <button name="action_admit" type="object" string="Admit &amp; Enrol" class="btn-primary" invisible="state not in ('applied', 'approved', 'offer_accepted')"/>
+          <field name="state" widget="statusbar" statusbar_visible="applied,audition,approved,waitlisted,offered,offer_accepted,admitted"/>
+        </header>
+        <sheet>
+          <div class="oe_title"><label for="name"/><h1><field name="name" readonly="1"/></h1><h2><field name="full_name" readonly="1"/></h2></div>
+          <group>
+            <group string="Application"><field name="admission_id"/><field name="program_id" readonly="1"/><field name="academic_year_id" readonly="1"/><field name="application_date"/><field name="application_fee_paid"/></group>
+            <group string="Applicant"><field name="first_name"/><field name="middle_name"/><field name="last_name"/><field name="date_of_birth"/><field name="gender"/><field name="category_id"/></group>
+          </group>
+          <group>
+            <group string="Contact"><field name="email" widget="email"/><field name="phone" widget="phone"/><field name="prior_school"/></group>
+            <group string="Guardian"><field name="guardian_name"/><field name="guardian_email" widget="email"/><field name="guardian_phone" widget="phone"/></group>
+          </group>
+          <notebook>
+            <page string="Documents"><field name="document_ids"><list editable="bottom"><field name="name"/><field name="attachment_id"/><field name="verified"/><field name="verified_by_id"/><field name="verified_date"/></list></field></page>
+            <page string="Audition &amp; Offer"><group><group string="Audition"><field name="audition_datetime"/><field name="audition_location"/><field name="audition_reviewer_id"/><field name="audition_result"/><field name="audition_score"/></group><group string="Enrollment Offer"><field name="offer_sent_at" readonly="1"/><field name="offer_accepted_at" readonly="1"/></group></group><field name="audition_notes"/></page>
+            <page string="Consent Audit"><group><field name="consent_given" readonly="1"/><field name="consent_date" readonly="1"/><field name="consent_notice_version" readonly="1"/></group></page>
+            <page string="Notes"><field name="notes" widget="html"/></page>
+            <page string="Admission Result" invisible="state != 'admitted'"><group><field name="student_id" readonly="1"/><field name="enrollment_id" readonly="1"/></group></page>
+          </notebook>
+        </sheet>
+        <chatter/>
+      </form>
+    </field>
+  </record>
+  <record id="action_student_applicant" model="ir.actions.act_window">
+    <field name="name">Student Applicants</field><field name="res_model">cdt.student.applicant</field><field name="view_mode">list,form</field>
+  </record>
+
+  <record id="view_program_enrollment_list" model="ir.ui.view">
+    <field name="name">cdt.program.enrollment.list</field><field name="model">cdt.program.enrollment</field>
+    <field name="arch" type="xml"><list decoration-success="state == 'confirmed'" decoration-muted="state in ('completed', 'cancelled')"><field name="name"/><field name="student_id"/><field name="program_id"/><field name="academic_year_id"/><field name="academic_term_id"/><field name="enrollment_date"/><field name="state" widget="badge"/></list></field>
+  </record>
+  <record id="view_program_enrollment_form" model="ir.ui.view">
+    <field name="name">cdt.program.enrollment.form</field><field name="model">cdt.program.enrollment</field>
+    <field name="arch" type="xml">
+      <form>
+        <header>
+          <button name="action_confirm" type="object" string="Confirm Enrollment" class="btn-primary" invisible="state != 'draft'"/>
+          <button name="action_complete" type="object" string="Complete" invisible="state != 'confirmed'"/>
+          <button name="action_cancel" type="object" string="Cancel" invisible="state in ('completed', 'cancelled')"/>
+          <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,completed"/>
+        </header>
+        <sheet>
+          <div class="oe_title"><label for="name"/><h1><field name="name" readonly="1"/></h1></div>
+          <group>
+            <group><field name="student_id"/><field name="program_id"/><field name="enrollment_date"/><field name="academic_year_id"/><field name="academic_term_id" domain="[('academic_year_id', '=', academic_year_id)]"/></group>
+            <group><field name="category_id"/><field name="batch_id"/><field name="house_id"/><field name="fee_structure_id"/><field name="fees_due_date"/></group>
+          </group>
+          <group string="Transportation and Boarding"><field name="boarding_student"/><field name="transportation_mode"/><field name="vehicle_number" invisible="transportation_mode in (False, 'none')"/></group>
+          <notebook>
+            <page string="Courses"><field name="course_ids" widget="many2many_tags"/></page>
+            <page string="Course Enrollments"><field name="course_enrollment_ids"><list editable="bottom"><field name="course_id"/><field name="offering_id"/><field name="status"/><field name="progress"/><field name="final_grade"/></list></field></page>
+            <page string="Migration" groups="cdt_education.group_education_manager"><field name="legacy_id"/></page>
+          </notebook>
+        </sheet>
+        <chatter/>
+      </form>
+    </field>
+  </record>
+  <record id="action_program_enrollment" model="ir.actions.act_window">
+    <field name="name">Program Enrollments</field><field name="res_model">cdt.program.enrollment</field><field name="view_mode">list,form</field>
+  </record>
+  <record id="action_course_enrollment" model="ir.actions.act_window">
+    <field name="name">Course Enrollments</field><field name="res_model">cdt.course.enrollment</field><field name="view_mode">list,form</field>
+  </record>
+</odoo>
